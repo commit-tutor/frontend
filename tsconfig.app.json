@@ -1,9 +1,7 @@
 {
+  "extends": "./tsconfig.json", // 이 줄을 추가합니다.
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    },
+    // "baseUrl" 과 "paths" 옵션을 여기서 삭제합니다.
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2022",
     "useDefineForClassFields": true,
