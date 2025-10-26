@@ -1,13 +1,22 @@
-import {createRootRoute, Outlet} from '@tanstack/react-router'
+import { createRootRoute, Outlet, useLocation } from '@tanstack/react-router'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { useAuth } from '@/contexts/AuthContext'
+
+const NO_SIDEBAR_ROUTES = ['/', '/auth/callback', '/onboarding']
 
 export function RootLayout() {
+  const location = useLocation()
+  const { isAuthenticated } = useAuth()
+  const showSidebar = isAuthenticated && !NO_SIDEBAR_ROUTES.includes(location.pathname)
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-neutral-800 font-sans">
-      <div className="flex flex-col items-center w-[390px] h-[844px] bg-[#121212] text-white shadow-2xl rounded-3xl overflow-hidden">
-        <div className="flex-1 w-full px-6 pt-6 py-6 overflow-y-auto scrollbar-hide">
+    <div className="flex min-h-screen bg-gray-50 text-gray-900 font-sans">
+      {showSidebar && <Sidebar />}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-7xl mx-auto px-6 py-6">
           <Outlet />
         </div>
-      </div>
+      </main>
     </div>
   )
 }
