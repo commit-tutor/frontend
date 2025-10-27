@@ -7,31 +7,39 @@ import { useEffect } from 'react'
 
 function LandingPage() {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
 
+  // 이미 로그인한 사용자는 홈으로 리다이렉트
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isLoading && isAuthenticated) {
       navigate({ to: '/home' })
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, isLoading, navigate])
 
   const handleGithubLogin = () => {
-    // TODO: Implement GitHub OAuth flow
-    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID || 'YOUR_CLIENT_ID'
-    const redirectUri = `${window.location.origin}/auth/callback`
-    const scope = 'read:user,user:email,repo'
+    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
 
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`
+    if (!clientId) {
+      alert('GitHub Client ID가 설정되지 않았습니다. .env 파일을 확인해주세요.')
+      return
+    }
+
+    const redirectUri = `${window.location.origin}/auth/callback`
+    const scope = 'read:user user:email repo'
+
+    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`
+
+    // GitHub OAuth 페이지로 리다이렉트
+    window.location.href = authUrl
   }
 
-  const handleDevLogin = () => {
-    // Development only: Quick login for testing
-    localStorage.setItem('github_token', 'dev_token_123')
-    window.location.reload()
+  // 로딩 중이면 아무것도 표시하지 않음
+  if (isLoading) {
+    return null
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-full space-y-8 max-w-2xl mx-auto">
+    <div className="flex flex-col items-center justify-center min-h-full space-y-8 max-w-2xl mx-auto px-4">
       {/* Hero Section */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold text-gray-900">Commit Tutor</h1>
@@ -43,8 +51,8 @@ function LandingPage() {
         </p>
       </div>
 
-      {/* Login Buttons */}
-      <div className="w-full max-w-xs space-y-3">
+      {/* Login Button */}
+      <div className="w-full max-w-xs">
         <Button
           size="lg"
           onClick={handleGithubLogin}
@@ -52,16 +60,6 @@ function LandingPage() {
         >
           <Github className="mr-2 h-5 w-5" />
           GitHub으로 시작하기
-        </Button>
-
-        {/* Development Mode Login */}
-        <Button
-          size="lg"
-          onClick={handleDevLogin}
-          variant="outline"
-          className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
-        >
-          개발자 모드 로그인
         </Button>
       </div>
 
@@ -108,6 +106,12 @@ function LandingPage() {
             </CardDescription>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Footer */}
+      <div className="text-center text-xs text-gray-500 mt-8">
+        <p>GitHub 계정으로 간편하게 시작하세요</p>
+        <p className="mt-1">저장소 접근 권한은 학습 목적으로만 사용됩니다</p>
       </div>
     </div>
   )
