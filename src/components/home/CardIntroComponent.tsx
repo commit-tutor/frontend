@@ -1,14 +1,6 @@
-import type {LucideIcon} from "lucide-react";
+import type {CardInfo} from "@/constants/homePageData.ts";
 
-interface CardIntroProps {
-  Icon: LucideIcon;
-  title: string;
-  body: string;
-  fromColor: string;
-  toColor: string;
-}
-
-export default function CardIntroComponent({ Icon, title, body, fromColor, toColor }: CardIntroProps) {
+export default function CardIntroComponent({ Icon, title, body, fromColor, toColor }: CardInfo) {
   return (
     <div className="flex flex-col items-center gap-4 rounded-lg border border-border/10 bg-white/5 p-8">
       <div
