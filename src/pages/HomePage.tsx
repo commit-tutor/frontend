@@ -1,5 +1,6 @@
 import {Bolt, Code, Target} from "lucide-react";
 import HeaderComponent from "@/components/common/HeaderComponent.tsx";
+import BottomComponent from "@/components/common/BottomComponent.tsx";
 
 export default function HomePage() {
   return (
@@ -52,6 +53,8 @@ export default function HomePage() {
         <p className="max-w-xl text-lg">GitHub 계정만 있으면 1분 안에 맞춤형 학습을 시작할 수 있습니다.</p>
         <button className="btn-primary rounded-xl max-w-3xl py-4 px-12 font-bold cursor-pointer">무료로 시작하기 →</button>
       </div>
+
+      <BottomComponent />
     </div>
   )
 }
