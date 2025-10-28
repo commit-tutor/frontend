@@ -110,11 +110,12 @@
   --sidebar-ring: oklch(0.553 0.013 58.071);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
+@layer components {
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-400 via-purple-500 to-blue-600 bg-clip-text text-transparent;
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-purple-500/50;
   }
 }
