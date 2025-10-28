@@ -1,8 +1,11 @@
 import {Bolt, Code, Target} from "lucide-react";
+import HeaderComponent from "@/components/common/HeaderComponent.tsx";
 
 export default function HomePage() {
   return (
     <div className="flex flex-col items-center text-white">
+      <HeaderComponent />
+
       <div className="flex flex-col items-center mt-20 mb-14">
         <h1 className="text-center text-5xl font-bold"><span className="gradient-text">당신의 GitHub 저장소가</span> <br/> 최고의
           교재가 됩니다</h1>
