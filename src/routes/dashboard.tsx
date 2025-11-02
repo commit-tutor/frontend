@@ -90,7 +90,7 @@ function DashboardPage() {
   )
 
   const handleStartLearning = (repoId: string) => {
-    navigate({ to: `/repo/${repoId}/commits` })
+    navigate({ to: `/repo/${repoId}/commits_mock` })
   }
 
   return (

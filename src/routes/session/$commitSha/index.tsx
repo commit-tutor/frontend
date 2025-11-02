@@ -17,7 +17,8 @@ const MOCK_COMMIT = {
 }
 
 const MOCK_AI_ANALYSIS = {
-  summary: '이 커밋은 JWT를 사용한 사용자 인증 시스템을 구현했습니다. Express 미들웨어와 함께 토큰 기반 인증을 설정하고, 보안을 강화하기 위한 여러 조치를 취했습니다.',
+  summary:
+    '이 커밋은 JWT를 사용한 사용자 인증 시스템을 구현했습니다. Express 미들웨어와 함께 토큰 기반 인증을 설정하고, 보안을 강화하기 위한 여러 조치를 취했습니다.',
   quality: {
     readability: 85,
     performance: 78,
@@ -93,7 +94,7 @@ function SessionPage() {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="review" className="flex items-center gap-2">
             <Code2 className="h-4 w-4" />
-            코드 리뷰
+            커밋 분석
           </TabsTrigger>
           <TabsTrigger value="quiz" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
@@ -188,7 +189,7 @@ function SessionPage() {
               <div className="bg-gray-100 rounded p-4 text-xs font-mono">
                 <div className="text-green-400">+ const token = jwt.sign(payload, secret)</div>
                 <div className="text-red-400">- const token = createToken(payload)</div>
-                <div className="text-gray-500">  return token</div>
+                <div className="text-gray-500"> return token</div>
               </div>
             </CardContent>
           </Card>
