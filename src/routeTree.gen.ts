@@ -13,13 +13,16 @@ import { Route as StatisticsRouteImport } from './routes/statistics'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LearningHistoryRouteImport } from './routes/learning-history'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as Dashboard_mockRouteImport } from './routes/dashboard_mock'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as R404RouteImport } from './routes/$404'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as SessionCommitShaIndexRouteImport } from './routes/session/$commitSha/index'
+import { Route as RepoRepoIdIndexRouteImport } from './routes/repo/$repoId/index'
 import { Route as SessionCommitShaResultRouteImport } from './routes/session/$commitSha/result'
+import { Route as RepoRepoIdCommits_mockRouteImport } from './routes/repo/$repoId/commits_mock'
 import { Route as RepoRepoIdCommitsRouteImport } from './routes/repo/$repoId/commits'
 
 const StatisticsRoute = StatisticsRouteImport.update({
@@ -40,6 +43,11 @@ const LearningHistoryRoute = LearningHistoryRouteImport.update({
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Dashboard_mockRoute = Dashboard_mockRouteImport.update({
+  id: '/dashboard_mock',
+  path: '/dashboard_mock',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -72,9 +80,19 @@ const SessionCommitShaIndexRoute = SessionCommitShaIndexRouteImport.update({
   path: '/session/$commitSha/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RepoRepoIdIndexRoute = RepoRepoIdIndexRouteImport.update({
+  id: '/repo/$repoId/',
+  path: '/repo/$repoId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SessionCommitShaResultRoute = SessionCommitShaResultRouteImport.update({
   id: '/session/$commitSha/result',
   path: '/session/$commitSha/result',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RepoRepoIdCommits_mockRoute = RepoRepoIdCommits_mockRouteImport.update({
+  id: '/repo/$repoId/commits_mock',
+  path: '/repo/$repoId/commits_mock',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RepoRepoIdCommitsRoute = RepoRepoIdCommitsRouteImport.update({
@@ -87,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$404': typeof R404Route
   '/dashboard': typeof DashboardRoute
+  '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
   '/learning-history': typeof LearningHistoryRoute
   '/onboarding': typeof OnboardingRoute
@@ -94,13 +113,16 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/repo/$repoId/commits': typeof RepoRepoIdCommitsRoute
+  '/repo/$repoId/commits_mock': typeof RepoRepoIdCommits_mockRoute
   '/session/$commitSha/result': typeof SessionCommitShaResultRoute
+  '/repo/$repoId': typeof RepoRepoIdIndexRoute
   '/session/$commitSha': typeof SessionCommitShaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$404': typeof R404Route
   '/dashboard': typeof DashboardRoute
+  '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
   '/learning-history': typeof LearningHistoryRoute
   '/onboarding': typeof OnboardingRoute
@@ -108,7 +130,9 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/repo/$repoId/commits': typeof RepoRepoIdCommitsRoute
+  '/repo/$repoId/commits_mock': typeof RepoRepoIdCommits_mockRoute
   '/session/$commitSha/result': typeof SessionCommitShaResultRoute
+  '/repo/$repoId': typeof RepoRepoIdIndexRoute
   '/session/$commitSha': typeof SessionCommitShaIndexRoute
 }
 export interface FileRoutesById {
@@ -116,6 +140,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$404': typeof R404Route
   '/dashboard': typeof DashboardRoute
+  '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
   '/learning-history': typeof LearningHistoryRoute
   '/onboarding': typeof OnboardingRoute
@@ -123,7 +148,9 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/repo/$repoId/commits': typeof RepoRepoIdCommitsRoute
+  '/repo/$repoId/commits_mock': typeof RepoRepoIdCommits_mockRoute
   '/session/$commitSha/result': typeof SessionCommitShaResultRoute
+  '/repo/$repoId/': typeof RepoRepoIdIndexRoute
   '/session/$commitSha/': typeof SessionCommitShaIndexRoute
 }
 export interface FileRouteTypes {
@@ -132,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$404'
     | '/dashboard'
+    | '/dashboard_mock'
     | '/home'
     | '/learning-history'
     | '/onboarding'
@@ -139,13 +167,16 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/settings/profile'
     | '/repo/$repoId/commits'
+    | '/repo/$repoId/commits_mock'
     | '/session/$commitSha/result'
+    | '/repo/$repoId'
     | '/session/$commitSha'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/$404'
     | '/dashboard'
+    | '/dashboard_mock'
     | '/home'
     | '/learning-history'
     | '/onboarding'
@@ -153,13 +184,16 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/settings/profile'
     | '/repo/$repoId/commits'
+    | '/repo/$repoId/commits_mock'
     | '/session/$commitSha/result'
+    | '/repo/$repoId'
     | '/session/$commitSha'
   id:
     | '__root__'
     | '/'
     | '/$404'
     | '/dashboard'
+    | '/dashboard_mock'
     | '/home'
     | '/learning-history'
     | '/onboarding'
@@ -167,7 +201,9 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/settings/profile'
     | '/repo/$repoId/commits'
+    | '/repo/$repoId/commits_mock'
     | '/session/$commitSha/result'
+    | '/repo/$repoId/'
     | '/session/$commitSha/'
   fileRoutesById: FileRoutesById
 }
@@ -175,6 +211,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R404Route: typeof R404Route
   DashboardRoute: typeof DashboardRoute
+  Dashboard_mockRoute: typeof Dashboard_mockRoute
   HomeRoute: typeof HomeRoute
   LearningHistoryRoute: typeof LearningHistoryRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -182,7 +219,9 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   RepoRepoIdCommitsRoute: typeof RepoRepoIdCommitsRoute
+  RepoRepoIdCommits_mockRoute: typeof RepoRepoIdCommits_mockRoute
   SessionCommitShaResultRoute: typeof SessionCommitShaResultRoute
+  RepoRepoIdIndexRoute: typeof RepoRepoIdIndexRoute
   SessionCommitShaIndexRoute: typeof SessionCommitShaIndexRoute
 }
 
@@ -214,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof HomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard_mock': {
+      id: '/dashboard_mock'
+      path: '/dashboard_mock'
+      fullPath: '/dashboard_mock'
+      preLoaderRoute: typeof Dashboard_mockRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -258,11 +304,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SessionCommitShaIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/repo/$repoId/': {
+      id: '/repo/$repoId/'
+      path: '/repo/$repoId'
+      fullPath: '/repo/$repoId'
+      preLoaderRoute: typeof RepoRepoIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/session/$commitSha/result': {
       id: '/session/$commitSha/result'
       path: '/session/$commitSha/result'
       fullPath: '/session/$commitSha/result'
       preLoaderRoute: typeof SessionCommitShaResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/repo/$repoId/commits_mock': {
+      id: '/repo/$repoId/commits_mock'
+      path: '/repo/$repoId/commits_mock'
+      fullPath: '/repo/$repoId/commits_mock'
+      preLoaderRoute: typeof RepoRepoIdCommits_mockRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/repo/$repoId/commits': {
@@ -279,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R404Route: R404Route,
   DashboardRoute: DashboardRoute,
+  Dashboard_mockRoute: Dashboard_mockRoute,
   HomeRoute: HomeRoute,
   LearningHistoryRoute: LearningHistoryRoute,
   OnboardingRoute: OnboardingRoute,
@@ -286,7 +347,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   RepoRepoIdCommitsRoute: RepoRepoIdCommitsRoute,
+  RepoRepoIdCommits_mockRoute: RepoRepoIdCommits_mockRoute,
   SessionCommitShaResultRoute: SessionCommitShaResultRoute,
+  RepoRepoIdIndexRoute: RepoRepoIdIndexRoute,
   SessionCommitShaIndexRoute: SessionCommitShaIndexRoute,
 }
 export const routeTree = rootRouteImport
