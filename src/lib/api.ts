@@ -23,7 +23,7 @@ apiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error)
-  }
+  },
 )
 
 // Response Interceptor: 에러 핸들링
@@ -44,7 +44,7 @@ apiClient.interceptors.response.use(
       '알 수 없는 오류가 발생했습니다.'
 
     return Promise.reject(new Error(errorMessage))
-  }
+  },
 )
 
 // 타입 정의
@@ -63,6 +63,31 @@ export type UserResponse = {
 
 export type LoginURLResponse = {
   auth_url: string
+}
+
+export type Repository = {
+  id: number
+  name: string
+  full_name: string
+  owner_login: string
+  private: boolean
+  fork: boolean
+  description: string | null
+  language: string | null
+  default_branch: string
+  updated_at: string
+}
+
+export type Commit = {
+  sha: string
+  message: string
+  author: string
+  date: string
+  filesChanged: number
+  additions: number
+  deletions: number
+  learningValue: 'high' | 'medium' | 'low'
+  isCompleted: boolean
 }
 
 // Auth API
@@ -91,6 +116,38 @@ export const authApi = {
    */
   getCurrentUser: async (): Promise<UserResponse> => {
     const response = await apiClient.get<UserResponse>('/auth/me')
+    return response.data
+  },
+}
+
+// Repository API
+export const repoApi = {
+  /**
+   * 사용자의 저장소 목록 조회
+   */
+  getRepositories: async (): Promise<Repository[]> => {
+    const response = await apiClient.get<Repository[]>('/repo/get_repo')
+    return response.data
+  },
+
+  /**
+   * 특정 저장소의 커밋 목록 조회
+   * @param repoIdentifier - 저장소 ID 또는 'owner/repo' 형식
+   * @param branch - 브랜치 이름 (기본값: main)
+   */
+  getCommits: async (repoIdentifier: string | number, branch = 'main'): Promise<Commit[]> => {
+    const response = await apiClient.get<Commit[]>(`/repo/${repoIdentifier}/commits`, {
+      params: { branch },
+    })
+    return response.data
+  },
+
+  /**
+   * 특정 저장소의 브랜치 목록 조회
+   * @param repoIdentifier - 저장소 ID 또는 'owner/repo' 형식
+   */
+  getBranches: async (repoIdentifier: string | number): Promise<string[]> => {
+    const response = await apiClient.get<string[]>(`/repo/${repoIdentifier}/branches`)
     return response.data
   },
 }

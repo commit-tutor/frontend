@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import apiClient from '@/lib/api'
-import { useState, useEffect } from 'react' // useEffect 추가
+import { repoApi, type Repository } from '@/lib/api'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,75 +11,35 @@ import {
   GitBranch,
   Star,
   ExternalLink,
-  Link as LinkIcon,
   AlertTriangle,
-} from 'lucide-react' // AlertTriangle 아이콘 추가
-
-// --- 1. Repository 데이터 타입 정의 (백엔드 응답 구조 기반) ---
-// 백엔드 (repo.py)의 process_repositories_data 함수에서 반환하는 구조를 따릅니다.
-interface Repository {
-  id: string
-  name: string
-  full_name: string // GitHub 링크 생성 및 API 호출에 사용
-  owner_login: string
-  private: boolean
-  fork: boolean
-  description: string | null
-  language: string | null
-  default_branch: string
-  updated_at: string
-  stars: number
-  isConnected: boolean // Commit Tutor와의 연결 상태
-}
-
-// FastAPI 백엔드 주소 (개발 환경에 따라 다를 수 있음)
-const API_BASE_URL = 'http://localhost:8000/api/v1/repo/get_repo'
+} from 'lucide-react'
 
 function DashboardPage() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
-
-  // MOCK_REPOSITORIES를 제거하고 실제 상태를 사용하도록 변경
   const [repositories, setRepositories] = useState<Repository[]>([])
-  const [isLoading, setIsLoading] = useState(true) // 로딩 상태를 true로 시작
-  const [error, setError] = useState<string | null>(null) // 에러 상태 추가
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // --- 2. API 호출 함수 구현 ---
+  // API 호출 함수 - repoApi 사용
   const fetchRepositories = async () => {
     setIsLoading(true)
     setError(null)
     setRepositories([])
 
     try {
-      const response = await fetch(API_BASE_URL)
-
-      if (!response.ok) {
-        // 백엔드에서 401(토큰 오류)이나 404/500(API 오류)를 보낼 경우
-        let errorDetail = response.statusText
-        try {
-          // FastAPI에서 HTTPException을 보낼 경우 JSON 본문을 파싱하여 상세 에러 메시지를 얻습니다.
-          const errorData = await response.json()
-          errorDetail = errorData.detail || errorDetail
-        } catch (e) {
-          // JSON 파싱 실패 시 기본 응답 텍스트 사용
-        }
-        throw new Error(`저장소 로딩 실패: ${response.status} - ${errorDetail}`)
-      }
-
-      const data: Repository[] = await response.json()
+      const data = await repoApi.getRepositories()
       setRepositories(data)
     } catch (err) {
-      // 네트워크 오류 또는 기타 예외
       setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // --- 3. 컴포넌트 마운트 시 데이터 로드 ---
+  // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchRepositories()
-    // 의존성 배열이 비어있으므로 컴포넌트가 처음 렌더링될 때 한 번만 실행됩니다.
   }, [])
 
   // --- 4. 필터링 로직은 그대로 유지 ---
@@ -89,7 +49,7 @@ function DashboardPage() {
       (repo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false),
   )
 
-  const handleStartLearning = (repoId: string) => {
+  const handleStartLearning = (repoId: number) => {
     navigate({ to: `/repo/${repoId}/commits_mock` })
   }
 
@@ -210,11 +170,10 @@ function DashboardPage() {
                   <Badge variant="outline" className="text-xs">
                     {repo.language || 'N/A'}
                   </Badge>
-                  <span className="flex items-center gap-1">
-                    <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />
-                    {repo.stars}
-                  </span>
                   <span>업데이트: {new Date(repo.updated_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-gray-500">
+                    {repo.private ? '🔒 Private' : '📖 Public'}
+                  </span>
                 </div>
 
                 {

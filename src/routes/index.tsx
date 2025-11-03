@@ -16,21 +16,18 @@ function LandingPage() {
     }
   }, [isAuthenticated, isLoading, navigate])
 
-  const handleGithubLogin = () => {
-    const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID
+  const handleGithubLogin = async () => {
+    try {
+      // 백엔드 API를 통해 GitHub OAuth URL 가져오기
+      const { authApi } = await import('@/lib/api')
+      const { auth_url } = await authApi.getGithubLoginUrl()
 
-    if (!clientId) {
-      alert('GitHub Client ID가 설정되지 않았습니다. .env 파일을 확인해주세요.')
-      return
+      // GitHub OAuth 페이지로 리다이렉트
+      window.location.href = auth_url
+    } catch (error) {
+      console.error('GitHub 로그인 URL 가져오기 실패:', error)
+      alert('로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.')
     }
-
-    const redirectUri = `${window.location.origin}/auth/callback`
-    const scope = 'read:user user:email repo'
-
-    const authUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}`
-
-    // GitHub OAuth 페이지로 리다이렉트
-    window.location.href = authUrl
   }
 
   // 로딩 중이면 아무것도 표시하지 않음
