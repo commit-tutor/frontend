@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +19,7 @@ import {
   FileText,
   AlertTriangle,
 } from 'lucide-react'
+import { useBranches } from '@/hooks/useBranches'
 
 type LearningValue = 'high' | 'medium' | 'low'
 
@@ -52,10 +53,24 @@ function CommitsPage() {
   const navigate = useNavigate()
   const { repoId } = Route.useParams()
 
-  const [selectedBranch, setSelectedBranch] = useState('main')
-  const [commits, setCommits] = useState<Commit[]>([]) // Mock Data
+  // 브랜치 목록 가져오기
+  const { branches, isLoading: isBranchesLoading, error: branchesError } = useBranches(repoId)
+
+  const [selectedBranch, setSelectedBranch] = useState<string>('')
+  const [commits, setCommits] = useState<Commit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // 브랜치 목록이 로드되면 첫 번째 브랜치를 선택
+  useEffect(() => {
+    console.log('🌿 브랜치 목록:', branches)
+    if (branches.length > 0 && !selectedBranch) {
+      // main 또는 master 브랜치를 우선적으로 선택, 없으면 첫 번째 브랜치
+      const defaultBranch = branches.find(b => b === 'main' || b === 'master') || branches[0]
+      console.log('✅ 기본 브랜치 선택:', defaultBranch)
+      setSelectedBranch(defaultBranch)
+    }
+  }, [branches, selectedBranch])
 
   const fetchCommits = async (branch: string) => {
     setIsLoading(true)
@@ -64,22 +79,36 @@ function CommitsPage() {
 
     // 백엔드URL: http://localhost:8000/api/v1/repo/{repoId}/commits?branch=main
     const url = `${API_BASE_URL}/${repoId}/commits?branch=${branch}`
+    console.log('📡 커밋 요청 URL:', url)
+    console.log('🔑 브랜치:', branch)
 
     try {
-      const response = await fetch(url)
+      const token = localStorage.getItem('github_token')
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        },
+      })
+
+      console.log('📥 응답 상태:', response.status)
 
       if (!response.ok) {
         let errorDetail = response.statusText
         try {
           const errorData = await response.json()
+          console.log('❌ 에러 데이터:', errorData)
           errorDetail = errorData.detail || errorDetail
         } catch (e) {}
         throw new Error(`커밋 로딩 실패 (${response.status}): ${errorDetail}`)
       }
 
       const data: Commit[] = await response.json()
+      console.log('✅ 커밋 데이터 받음:', data.length, '개')
+      console.log('📋 커밋 목록:', data)
       setCommits(data)
     } catch (err) {
+      console.error('❌ 커밋 로딩 에러:', err)
       setError(err instanceof Error ? err.message : '오류가 발생했습니다.')
     } finally {
       setIsLoading(false)
@@ -87,7 +116,9 @@ function CommitsPage() {
   }
 
   useEffect(() => {
-    fetchCommits(selectedBranch)
+    if (selectedBranch) {
+      fetchCommits(selectedBranch)
+    }
   }, [repoId, selectedBranch])
 
   const handleStartLearning = (commitSha: string) => {
@@ -95,6 +126,7 @@ function CommitsPage() {
   }
 
   const handleBranchChange = (branch: string) => {
+    console.log('🔄 브랜치 변경:', selectedBranch, '->', branch)
     setSelectedBranch(branch)
   }
 
@@ -112,26 +144,45 @@ function CommitsPage() {
           <Button
             variant="outline"
             className="w-full justify-between border-gray-200"
-            disabled={isLoading}
+            disabled={isLoading || isBranchesLoading}
           >
             <span className="flex items-center gap-2">
               <GitBranch className="h-4 w-4" />
-              {selectedBranch}
+              {isBranchesLoading ? '브랜치 로딩 중...' : selectedBranch || '브랜치 선택'}
             </span>
             <ChevronDown className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-full">
-          {}
-          <DropdownMenuItem onClick={() => handleBranchChange('main')}>main</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleBranchChange('develop')}>develop</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleBranchChange('feature/new')}>
-            feature/new
-          </DropdownMenuItem>
+          {branches.length === 0 ? (
+            <DropdownMenuItem disabled>사용 가능한 브랜치가 없습니다</DropdownMenuItem>
+          ) : (
+            branches.map((branch) => (
+              <DropdownMenuItem
+                key={branch}
+                onClick={() => handleBranchChange(branch)}
+                className={selectedBranch === branch ? 'bg-gray-100' : ''}
+              >
+                {branch}
+              </DropdownMenuItem>
+            ))
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
       {/* --- Error Message Display --- */}
+      {branchesError && (
+        <Card className="border-red-500 bg-red-50 text-red-800">
+          <CardContent className="py-3 px-4 flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+            <div className="text-sm font-medium">
+              <p>브랜치 목록 가져오기 실패</p>
+              <p className="text-xs font-normal opacity-90">{branchesError}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {error && (
         <Card className="border-red-500 bg-red-50 text-red-800">
           <CardContent className="py-3 px-4 flex items-center gap-3">
