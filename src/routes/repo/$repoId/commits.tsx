@@ -145,15 +145,15 @@ function CommitsPage() {
     if (selectedCommits.size === 0) return
 
     // 여러 커밋을 한 번에 학습하는 세션으로 이동
-    // commitSha 형식: repoId:sha 형태로 전달
+    // 모든 선택된 커밋을 repoId:sha 형태로 변환
     const commitShas = Array.from(selectedCommits)
+    const commitIdentifiers = commitShas.map((sha) => `${repoId}:${sha}`)
 
-    // 첫 번째 커밋을 메인으로 사용 (다중 커밋 학습은 향후 구현)
-    const firstCommitSha = commitShas[0]
-    const commitIdentifier = `${repoId}:${firstCommitSha}`
+    // 여러 커밋을 쉼표로 구분하여 URL에 전달
+    const commitsParam = commitIdentifiers.join(',')
 
     // 세션 페이지로 이동
-    navigate({ to: `/session/${encodeURIComponent(commitIdentifier)}` })
+    navigate({ to: `/session/${encodeURIComponent(commitsParam)}` })
   }
 
   return (

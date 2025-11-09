@@ -5,7 +5,13 @@ import { Code2, Brain, Loader2 } from 'lucide-react'
 import { useQuiz } from '@/hooks/useQuiz'
 import { CodeReviewTab } from '@/components/session/CodeReviewTab'
 import { QuizTab } from '@/components/session/QuizTab'
-import { learningApi, type QuizQuestion, type AIAnalysis } from '@/lib/api'
+import {
+  learningApi,
+  repoApi,
+  type QuizQuestion,
+  type AIAnalysis,
+  type CommitDiffInfo,
+} from '@/lib/api'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
@@ -111,10 +117,13 @@ function SessionPage() {
   // 데이터 상태
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([])
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null)
+  const [commitFiles, setCommitFiles] = useState<CommitDiffInfo[]>([])
   const [isLoadingQuiz, setIsLoadingQuiz] = useState(true)
   const [isLoadingReview, setIsLoadingReview] = useState(true)
+  const [isLoadingFiles, setIsLoadingFiles] = useState(true)
   const [quizError, setQuizError] = useState<string | null>(null)
   const [reviewError, setReviewError] = useState<string | null>(null)
+  const [filesError, setFilesError] = useState<string | null>(null)
 
   // 퀴즈 로직을 커스텀 훅으로 분리
   const quiz = useQuiz(quizQuestions)
@@ -122,23 +131,45 @@ function SessionPage() {
   // 컴포넌트 마운트 시 퀴즈와 리뷰 생성
   useEffect(() => {
     const loadLearningData = async () => {
-      // commitSha에서 repoIdentifier와 sha 분리
-      // URL 파라미터로 전달될 때: /session/owner/repo:sha
-      // 또는 /session/repoId:sha 형식
-      const commitIdentifier = commitSha
+      // commitSha 파라미터는 쉼표로 구분된 여러 커밋을 포함할 수 있음
+      // 형식: "repoId:sha1,repoId:sha2,repoId:sha3"
+      const commitIdentifiers = commitSha.split(',').map((id) => id.trim())
 
+      console.log('📦 선택된 커밋 개수:', commitIdentifiers.length)
+      console.log('📦 커밋 식별자:', commitIdentifiers)
+
+      // 첫 번째 커밋의 repoIdentifier와 sha 분리 (파일 정보용)
+      const [repoIdentifier, firstSha] = commitIdentifiers[0].split(':')
+
+      // 1. 첫 번째 커밋의 상세 정보 (diff 포함) 가져오기 - 코드 리뷰 탭에 표시용
       try {
-        // 퀴즈 생성
+        setIsLoadingFiles(true)
+        const commitDetails = await repoApi.getCommitDetails(repoIdentifier, firstSha)
+        setCommitFiles(commitDetails.files)
+        setFilesError(null)
+        console.log('✅ 커밋 파일 정보 로드 완료:', commitDetails.files.length, '개')
+      } catch (error) {
+        console.error('❌ 커밋 상세 정보 로딩 실패:', error)
+        setFilesError(error instanceof Error ? error.message : '파일 정보를 가져올 수 없습니다.')
+        setCommitFiles([])
+      } finally {
+        setIsLoadingFiles(false)
+      }
+
+      // 2. 퀴즈 생성 - 모든 선택된 커밋 사용
+      try {
         setIsLoadingQuiz(true)
+        console.log('🎯 퀴즈 생성 요청: ', commitIdentifiers)
         const quizResponse = await learningApi.generateQuiz({
-          commitShas: [commitIdentifier],
+          commitShas: commitIdentifiers, // 모든 커밋 전달
           difficulty: 'medium',
           questionCount: 5,
         })
         setQuizQuestions(quizResponse.questions)
         setQuizError(null)
+        console.log('✅ 퀴즈 생성 완료:', quizResponse.questions.length, '개')
       } catch (error) {
-        console.error('퀴즈 생성 실패:', error)
+        console.error('❌ 퀴즈 생성 실패:', error)
         setQuizError(error instanceof Error ? error.message : '퀴즈를 생성할 수 없습니다.')
         // 폴백: Mock 데이터 사용
         setQuizQuestions(MOCK_QUIZ.questions as QuizQuestion[])
@@ -146,16 +177,18 @@ function SessionPage() {
         setIsLoadingQuiz(false)
       }
 
+      // 3. 코드 리뷰 생성 - 첫 번째 커밋 사용 (여러 커밋 리뷰는 향후 개선)
       try {
-        // 코드 리뷰 생성
         setIsLoadingReview(true)
+        console.log('📝 코드 리뷰 생성 요청: ', commitIdentifiers[0])
         const reviewResponse = await learningApi.generateReview({
-          commitSha: commitIdentifier,
+          commitSha: commitIdentifiers[0],
         })
         setAiAnalysis(reviewResponse)
         setReviewError(null)
+        console.log('✅ 코드 리뷰 생성 완료')
       } catch (error) {
-        console.error('리뷰 생성 실패:', error)
+        console.error('❌ 리뷰 생성 실패:', error)
         setReviewError(error instanceof Error ? error.message : '리뷰를 생성할 수 없습니다.')
         // 폴백: Mock 데이터 사용
         setAiAnalysis(MOCK_AI_ANALYSIS)
@@ -171,13 +204,20 @@ function SessionPage() {
     navigate({ to: `/session/${commitSha}/result` })
   }
 
+  // 선택된 커밋 개수 계산
+  const commitCount = commitSha.split(',').length
+
   return (
     <div className="flex flex-col space-y-4">
       {/* Commit Header */}
       <div>
-        <h1 className="text-xl font-bold text-gray-900 mb-1 line-clamp-2">{MOCK_COMMIT.message}</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-1 line-clamp-2">
+          {commitCount > 1 ? `${commitCount}개의 커밋 학습` : MOCK_COMMIT.message}
+        </h1>
         <p className="text-xs text-gray-600">
-          {MOCK_COMMIT.author} · {MOCK_COMMIT.date} · {commitSha.slice(0, 7)}
+          {commitCount > 1
+            ? `선택된 ${commitCount}개 커밋을 기반으로 퀴즈와 코드 리뷰 생성`
+            : `${MOCK_COMMIT.author} · ${MOCK_COMMIT.date} · ${commitSha.slice(0, 7)}`}
         </p>
       </div>
 
@@ -206,13 +246,23 @@ function SessionPage() {
               </AlertDescription>
             </Alert>
           )}
-          {isLoadingReview ? (
+          {filesError && (
+            <Alert className="mb-4 border-red-500 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                파일 변경사항 로딩 실패: {filesError}
+              </AlertDescription>
+            </Alert>
+          )}
+          {isLoadingReview || isLoadingFiles ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              <span className="ml-3 text-gray-600">AI가 코드를 분석하는 중...</span>
+              <span className="ml-3 text-gray-600">
+                {isLoadingFiles ? '코드 변경사항을 불러오는 중...' : 'AI가 코드를 분석하는 중...'}
+              </span>
             </div>
           ) : (
-            <CodeReviewTab analysis={aiAnalysis || MOCK_AI_ANALYSIS} />
+            <CodeReviewTab analysis={aiAnalysis || MOCK_AI_ANALYSIS} files={commitFiles} />
           )}
         </TabsContent>
 

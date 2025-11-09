@@ -135,6 +135,25 @@ export type CodeAnalysisRequest = {
   focusAreas?: string[]
 }
 
+export type CommitDiffInfo = {
+  filename: string
+  status: string
+  additions: number
+  deletions: number
+  patch?: string
+}
+
+export type CommitDetailResponse = {
+  sha: string
+  message: string
+  author: string
+  date: string
+  filesChanged: number
+  additions: number
+  deletions: number
+  files: CommitDiffInfo[]
+}
+
 // Auth API
 export const authApi = {
   /**
@@ -193,6 +212,21 @@ export const repoApi = {
    */
   getBranches: async (repoIdentifier: string | number): Promise<string[]> => {
     const response = await apiClient.get<string[]>(`/repo/${repoIdentifier}/branches`)
+    return response.data
+  },
+
+  /**
+   * 특정 커밋의 상세 정보 (diff 포함) 조회
+   * @param repoIdentifier - 저장소 ID 또는 'owner/repo' 형식
+   * @param commitSha - 커밋 SHA
+   */
+  getCommitDetails: async (
+    repoIdentifier: string | number,
+    commitSha: string,
+  ): Promise<CommitDetailResponse> => {
+    const response = await apiClient.get<CommitDetailResponse>(
+      `/repo/${repoIdentifier}/commits/${commitSha}/details`,
+    )
     return response.data
   },
 }
