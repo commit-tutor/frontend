@@ -19,7 +19,10 @@ interface UseQuizReturn {
   quizAnswers: Record<string, number | string | null>
   answeredCount: number
   hasAnsweredCurrentQuestion: boolean
+  submittedAnswers: Set<string>
+  hasSubmittedCurrentQuestion: boolean
   handleAnswer: (questionId: string, answer: number | string) => void
+  handleSubmitAnswer: (questionId: string) => void
   handleNext: () => void
   handlePrevious: () => void
   goToQuestion: (index: number) => void
@@ -31,6 +34,7 @@ interface UseQuizReturn {
 export function useQuiz(questions: QuizQuestion[]): UseQuizReturn {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number | string | null>>({})
+  const [submittedAnswers, setSubmittedAnswers] = useState<Set<string>>(new Set())
 
   const currentQuestion = questions[currentQuestionIndex]
   const totalQuestions = questions.length
@@ -43,6 +47,10 @@ export function useQuiz(questions: QuizQuestion[]): UseQuizReturn {
     )
   }, [quizAnswers, currentQuestion])
 
+  const hasSubmittedCurrentQuestion = useMemo(() => {
+    return submittedAnswers.has(currentQuestion?.id)
+  }, [submittedAnswers, currentQuestion])
+
   const answeredCount = useMemo(() => {
     return Object.keys(quizAnswers).filter(
       (key) => quizAnswers[key] !== undefined && quizAnswers[key] !== null,
@@ -51,6 +59,10 @@ export function useQuiz(questions: QuizQuestion[]): UseQuizReturn {
 
   const handleAnswer = (questionId: string, answer: number | string) => {
     setQuizAnswers((prev) => ({ ...prev, [questionId]: answer }))
+  }
+
+  const handleSubmitAnswer = (questionId: string) => {
+    setSubmittedAnswers((prev) => new Set(prev).add(questionId))
   }
 
   const handleNext = () => {
@@ -80,7 +92,10 @@ export function useQuiz(questions: QuizQuestion[]): UseQuizReturn {
     quizAnswers,
     answeredCount,
     hasAnsweredCurrentQuestion,
+    submittedAnswers,
+    hasSubmittedCurrentQuestion,
     handleAnswer,
+    handleSubmitAnswer,
     handleNext,
     handlePrevious,
     goToQuestion,

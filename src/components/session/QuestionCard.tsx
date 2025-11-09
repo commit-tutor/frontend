@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { CheckCircle2, XCircle, Lightbulb } from 'lucide-react'
 
 interface Question {
   id: string
@@ -7,16 +9,39 @@ interface Question {
   question: string
   codeContext?: string
   options?: string[]
+  correctAnswer: number | string
+  explanation?: string
 }
 
 interface QuestionCardProps {
   question: Question
   questionIndex: number
   userAnswer: number | string | null
+  isSubmitted: boolean
   onAnswer: (questionId: string, answer: number | string) => void
+  onSubmit: () => void
 }
 
-export function QuestionCard({ question, questionIndex, userAnswer, onAnswer }: QuestionCardProps) {
+export function QuestionCard({
+  question,
+  questionIndex,
+  userAnswer,
+  isSubmitted,
+  onAnswer,
+  onSubmit,
+}: QuestionCardProps) {
+  // 답변 여부 확인
+  const hasAnswered = userAnswer !== null && userAnswer !== undefined && userAnswer !== ''
+
+  // 정답 여부 확인 (확인 버튼을 누른 경우에만)
+  const isCorrect =
+    hasAnswered && isSubmitted
+      ? question.type === 'multiple'
+        ? userAnswer === question.correctAnswer
+        : String(userAnswer).trim().toLowerCase() ===
+          String(question.correctAnswer).trim().toLowerCase()
+      : null
+
   return (
     <Card className="bg-white border-gray-200">
       <CardHeader>
@@ -26,7 +51,7 @@ export function QuestionCard({ question, questionIndex, userAnswer, onAnswer }: 
               문제 {questionIndex + 1}. {question.question}
             </CardTitle>
             <Badge variant="outline" className="w-fit text-xs">
-              {question.type === 'multiple' ? '객관식' : '단답형'}
+              객관식
             </Badge>
           </div>
         </div>
@@ -41,30 +66,79 @@ export function QuestionCard({ question, questionIndex, userAnswer, onAnswer }: 
 
         {/* Answer Options */}
         <div className="space-y-2">
-          {question.type === 'multiple' && question.options ? (
-            question.options.map((option, oIndex) => (
+          {question.options?.map((option, oIndex) => {
+            const isSelected = userAnswer === oIndex
+            const isCorrectOption = oIndex === question.correctAnswer
+            const showCorrect = isSubmitted && isCorrectOption
+            const showWrong = isSubmitted && isSelected && !isCorrectOption
+
+            return (
               <button
                 key={oIndex}
-                onClick={() => onAnswer(question.id, oIndex)}
-                className={`w-full text-left p-3 rounded border transition-colors ${
-                  userAnswer === oIndex
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-gray-100 text-gray-700 border-gray-200 hover:border-gray-300'
-                }`}
+                onClick={() => !isSubmitted && onAnswer(question.id, oIndex)}
+                disabled={isSubmitted}
+                className={`w-full text-left p-3 rounded border transition-colors flex items-center justify-between ${
+                  showCorrect
+                    ? 'bg-green-50 text-green-900 border-green-500'
+                    : showWrong
+                      ? 'bg-red-50 text-red-900 border-red-500'
+                      : isSelected
+                        ? 'bg-gray-900 text-white border-gray-900'
+                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300'
+                } ${isSubmitted ? 'cursor-default' : 'cursor-pointer'}`}
               >
-                <span className="text-sm">{option}</span>
+                <span className="text-sm flex-1">{option}</span>
+                {showCorrect && <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />}
+                {showWrong && <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />}
               </button>
-            ))
-          ) : (
-            <input
-              type="text"
-              placeholder="답을 입력하세요"
-              value={(userAnswer as string) || ''}
-              onChange={(e) => onAnswer(question.id, e.target.value)}
-              className="w-full p-3 rounded bg-gray-100 border border-gray-200 text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-gray-900"
-            />
-          )}
+            )
+          })}
         </div>
+
+        {/* 확인 버튼 */}
+        {hasAnswered && !isSubmitted && (
+          <Button onClick={onSubmit} className="w-full bg-gray-900 hover:bg-gray-800">
+            확인
+          </Button>
+        )}
+
+        {/* Feedback - 확인 버튼을 누른 후에만 표시 */}
+        {isSubmitted && isCorrect !== null && (
+          <div className="space-y-3">
+            {/* 정답/오답 표시 */}
+            <div
+              className={`w-full rounded-lg border px-4 py-3 flex items-center gap-3 ${
+                isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'
+              }`}
+            >
+              {isCorrect ? (
+                <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+              ) : (
+                <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+              )}
+              <div className={`font-semibold text-base ${isCorrect ? 'text-green-900' : 'text-red-900'}`}>
+                {isCorrect ? '정답입니다! 🎉' : '틀렸습니다'}
+              </div>
+            </div>
+
+            {/* 해설 */}
+            {question.explanation && (
+              <div className="w-full rounded-lg border px-4 py-3 bg-blue-50 border-blue-500">
+                <div className="flex items-start gap-3">
+                  <Lightbulb className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-blue-900 font-semibold text-sm mb-2">
+                      해설
+                    </div>
+                    <div className="text-blue-800 text-sm leading-relaxed whitespace-pre-wrap">
+                      {question.explanation}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

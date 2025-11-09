@@ -292,7 +292,10 @@ function SessionPage() {
               quizAnswers={quiz.quizAnswers}
               answeredCount={quiz.answeredCount}
               hasAnsweredCurrentQuestion={quiz.hasAnsweredCurrentQuestion}
+              submittedAnswers={quiz.submittedAnswers}
+              hasSubmittedCurrentQuestion={quiz.hasSubmittedCurrentQuestion}
               onAnswer={quiz.handleAnswer}
+              onSubmitAnswer={quiz.handleSubmitAnswer}
               onNext={quiz.handleNext}
               onPrevious={quiz.handlePrevious}
               onSubmit={handleSubmitQuiz}
