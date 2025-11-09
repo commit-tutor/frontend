@@ -9,7 +9,6 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10초
 })
 
 // Request Interceptor: 모든 요청에 JWT 토큰 추가
@@ -90,6 +89,71 @@ export type Commit = {
   isCompleted: boolean
 }
 
+// Learning API Types
+export type QuizQuestion = {
+  id: string
+  type: 'multiple' | 'short'
+  question: string
+  codeContext?: string
+  options?: string[]
+  correctAnswer: number | string
+  explanation?: string
+}
+
+export type QuizGenerationRequest = {
+  commitShas: string[]
+  difficulty?: 'easy' | 'medium' | 'hard'
+  questionCount?: number
+}
+
+export type QuizGenerationResponse = {
+  questions: QuizQuestion[]
+  metadata?: {
+    totalCommits: number
+    requestedCount: number
+    generatedCount: number
+    difficulty: string
+    generatedAt: string
+  }
+}
+
+export type CodeQuality = {
+  readability: number
+  performance: number
+  security: number
+}
+
+export type AIAnalysis = {
+  summary: string
+  quality: CodeQuality
+  suggestions: string[]
+  potentialBugs: string[]
+}
+
+export type CodeAnalysisRequest = {
+  commitSha: string
+  focusAreas?: string[]
+}
+
+export type CommitDiffInfo = {
+  filename: string
+  status: string
+  additions: number
+  deletions: number
+  patch?: string
+}
+
+export type CommitDetailResponse = {
+  sha: string
+  message: string
+  author: string
+  date: string
+  filesChanged: number
+  additions: number
+  deletions: number
+  files: CommitDiffInfo[]
+}
+
 // Auth API
 export const authApi = {
   /**
@@ -148,6 +212,42 @@ export const repoApi = {
    */
   getBranches: async (repoIdentifier: string | number): Promise<string[]> => {
     const response = await apiClient.get<string[]>(`/repo/${repoIdentifier}/branches`)
+    return response.data
+  },
+
+  /**
+   * 특정 커밋의 상세 정보 (diff 포함) 조회
+   * @param repoIdentifier - 저장소 ID 또는 'owner/repo' 형식
+   * @param commitSha - 커밋 SHA
+   */
+  getCommitDetails: async (
+    repoIdentifier: string | number,
+    commitSha: string,
+  ): Promise<CommitDetailResponse> => {
+    const response = await apiClient.get<CommitDetailResponse>(
+      `/repo/${repoIdentifier}/commits/${commitSha}/details`,
+    )
+    return response.data
+  },
+}
+
+// Learning API
+export const learningApi = {
+  /**
+   * 선택한 커밋들로 퀴즈 생성
+   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수)
+   */
+  generateQuiz: async (request: QuizGenerationRequest): Promise<QuizGenerationResponse> => {
+    const response = await apiClient.post<QuizGenerationResponse>('/learning/quiz', request)
+    return response.data
+  },
+
+  /**
+   * 단일 커밋에 대한 AI 코드 리뷰 생성
+   * @param request - 코드 분석 요청 (커밋 SHA, 집중 분석 영역)
+   */
+  generateReview: async (request: CodeAnalysisRequest): Promise<AIAnalysis> => {
+    const response = await apiClient.post<AIAnalysis>('/learning/review', request)
     return response.data
   },
 }

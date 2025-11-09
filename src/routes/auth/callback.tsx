@@ -37,14 +37,10 @@ function AuthCallbackPage() {
         }
 
         // 백엔드 API로 code를 보내서 토큰 교환
-        const needsOnboarding = await login(code)
+        await login(code)
 
-        // 온보딩 필요 여부에 따라 리다이렉트
-        if (needsOnboarding) {
-          navigate({ to: '/onboarding' })
-        } else {
-          navigate({ to: '/home' })
-        }
+        // 로그인 성공 시 홈으로 이동
+        navigate({ to: '/home' })
       } catch (err) {
         console.error('Auth callback error:', err)
 

@@ -22,7 +22,10 @@ interface QuizTabProps {
   quizAnswers: Record<string, number | string | null>
   answeredCount: number
   hasAnsweredCurrentQuestion: boolean
+  submittedAnswers: Set<string>
+  hasSubmittedCurrentQuestion: boolean
   onAnswer: (questionId: string, answer: number | string) => void
+  onSubmitAnswer: (questionId: string) => void
   onNext: () => void
   onPrevious: () => void
   onSubmit: () => void
@@ -39,7 +42,10 @@ export function QuizTab({
   quizAnswers,
   answeredCount,
   hasAnsweredCurrentQuestion,
+  submittedAnswers,
+  hasSubmittedCurrentQuestion,
   onAnswer,
+  onSubmitAnswer,
   onNext,
   onPrevious,
   onSubmit,
@@ -60,7 +66,9 @@ export function QuizTab({
         question={currentQuestion}
         questionIndex={currentQuestionIndex}
         userAnswer={quizAnswers[currentQuestion.id] ?? null}
+        isSubmitted={hasSubmittedCurrentQuestion}
         onAnswer={onAnswer}
+        onSubmit={() => onSubmitAnswer(currentQuestion.id)}
       />
 
       <QuizNavigation

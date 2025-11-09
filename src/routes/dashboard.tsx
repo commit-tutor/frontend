@@ -19,7 +19,7 @@ function DashboardPage() {
 
   // 이벤트 핸들러
   const handleStartLearning = (repoId: number) => {
-    navigate({ to: `/repo/${repoId}/commits_mock` })
+    navigate({ to: `/repo/${repoId}/commits` })
   }
 
   return (

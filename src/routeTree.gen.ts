@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StatisticsRouteImport } from './routes/statistics'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LearningHistoryRouteImport } from './routes/learning-history'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as Dashboard_mockRouteImport } from './routes/dashboard_mock'
@@ -28,11 +27,6 @@ import { Route as RepoRepoIdCommitsRouteImport } from './routes/repo/$repoId/com
 const StatisticsRoute = StatisticsRouteImport.update({
   id: '/statistics',
   path: '/statistics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LearningHistoryRoute = LearningHistoryRouteImport.update({
@@ -108,7 +102,6 @@ export interface FileRoutesByFullPath {
   '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
   '/learning-history': typeof LearningHistoryRoute
-  '/onboarding': typeof OnboardingRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -125,7 +118,6 @@ export interface FileRoutesByTo {
   '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
   '/learning-history': typeof LearningHistoryRoute
-  '/onboarding': typeof OnboardingRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -143,7 +135,6 @@ export interface FileRoutesById {
   '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
   '/learning-history': typeof LearningHistoryRoute
-  '/onboarding': typeof OnboardingRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -162,7 +153,6 @@ export interface FileRouteTypes {
     | '/dashboard_mock'
     | '/home'
     | '/learning-history'
-    | '/onboarding'
     | '/statistics'
     | '/auth/callback'
     | '/settings/profile'
@@ -179,7 +169,6 @@ export interface FileRouteTypes {
     | '/dashboard_mock'
     | '/home'
     | '/learning-history'
-    | '/onboarding'
     | '/statistics'
     | '/auth/callback'
     | '/settings/profile'
@@ -196,7 +185,6 @@ export interface FileRouteTypes {
     | '/dashboard_mock'
     | '/home'
     | '/learning-history'
-    | '/onboarding'
     | '/statistics'
     | '/auth/callback'
     | '/settings/profile'
@@ -214,7 +202,6 @@ export interface RootRouteChildren {
   Dashboard_mockRoute: typeof Dashboard_mockRoute
   HomeRoute: typeof HomeRoute
   LearningHistoryRoute: typeof LearningHistoryRoute
-  OnboardingRoute: typeof OnboardingRoute
   StatisticsRoute: typeof StatisticsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
@@ -232,13 +219,6 @@ declare module '@tanstack/react-router' {
       path: '/statistics'
       fullPath: '/statistics'
       preLoaderRoute: typeof StatisticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/learning-history': {
@@ -342,7 +322,6 @@ const rootRouteChildren: RootRouteChildren = {
   Dashboard_mockRoute: Dashboard_mockRoute,
   HomeRoute: HomeRoute,
   LearningHistoryRoute: LearningHistoryRoute,
-  OnboardingRoute: OnboardingRoute,
   StatisticsRoute: StatisticsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   SettingsProfileRoute: SettingsProfileRoute,
