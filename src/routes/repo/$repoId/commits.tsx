@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   CheckSquare,
   Square,
+  Info,
 } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
 
@@ -67,7 +68,7 @@ function CommitsPage() {
     console.log('🌿 브랜치 목록:', branches)
     if (branches.length > 0 && !selectedBranch) {
       // main 또는 master 브랜치를 우선적으로 선택, 없으면 첫 번째 브랜치
-      const defaultBranch = branches.find(b => b === 'main' || b === 'master') || branches[0]
+      const defaultBranch = branches.find((b) => b === 'main' || b === 'master') || branches[0]
       console.log('✅ 기본 브랜치 선택:', defaultBranch)
       setSelectedBranch(defaultBranch)
     }
@@ -87,8 +88,8 @@ function CommitsPage() {
       const token = localStorage.getItem('github_token')
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
         },
       })
 
@@ -188,6 +189,65 @@ function CommitsPage() {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* --- Selection Guide --- */}
+      {!isLoading && commits.length > 0 && (
+        <Card className="border-gray-200 bg-gray-50">
+          <CardContent className="py-1 px-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 flex-1">
+                <Info className="h-5 w-5 flex-shrink-0 text-gray-600" />
+                <div className="text-sm flex-1">
+                  {selectedCommits.size === 0 ? (
+                    <p className="text-gray-900 font-medium">학습을 시작할 커밋을 선택해주세요</p>
+                  ) : (
+                    <div>
+                      <p className="text-gray-900 font-medium mb-2">
+                        <span className="font-bold">{selectedCommits.size}개</span>의 커밋 선택됨
+                      </p>
+                      <div className="space-y-1">
+                        {commits
+                          .filter((commit) => selectedCommits.has(commit.sha))
+                          .slice(0, 10)
+                          .map((commit) => (
+                            <p key={commit.sha} className="text-xs text-gray-600 truncate">
+                              • {commit.message}
+                            </p>
+                          ))}
+                        {selectedCommits.size > 10 && (
+                          <p className="text-xs text-gray-500 italic">
+                            외 {selectedCommits.size - 10}개
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {selectedCommits.size > 0 && (
+                <div className="flex gap-2 items-end self-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedCommits(new Set())}
+                    className="border-gray-300 text-gray-700"
+                  >
+                    선택 해제
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleStartBatchLearning}
+                    className="bg-gray-900 text-white hover:bg-gray-800"
+                  >
+                    학습 시작하기
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* --- Error Message Display --- */}
       {branchesError && (
         <Card className="border-red-500 bg-red-50 text-red-800">
@@ -231,78 +291,59 @@ function CommitsPage() {
             <p className="text-sm text-gray-600">커밋이 없습니다</p>
           </div>
         ) : (
-          commits.map((commit, index) => (
-            <div
-              key={commit.sha}
-              className={`flex items-center gap-3 px-3 py-2 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors ${
-                index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-              }`}
-            >
-              {/* Checkbox for selecting commit */}
-              <button
-                onClick={() => toggleCommitSelection(commit.sha)}
-                className="flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 rounded"
+          commits.map((commit, index) => {
+            const isSelected = selectedCommits.has(commit.sha)
+            return (
+              <div
+                key={commit.sha}
+                className={`flex items-center gap-3 px-3 py-2 border-b border-gray-200 last:border-b-0 transition-colors ${
+                  isSelected
+                    ? 'bg-gray-100 border-l-4 border-l-gray-900'
+                    : index % 2 === 0
+                      ? 'bg-white hover:bg-gray-50'
+                      : 'bg-gray-50 hover:bg-gray-100'
+                }`}
               >
-                {selectedCommits.has(commit.sha) ? (
-                  <CheckSquare className="h-4 w-4 text-gray-900" />
-                ) : (
-                  <Square className="h-4 w-4 text-gray-400" />
-                )}
-              </button>
+                {/* Checkbox for selecting commit */}
+                <button
+                  onClick={() => toggleCommitSelection(commit.sha)}
+                  className="flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 rounded"
+                >
+                  {isSelected ? (
+                    <CheckSquare className="h-4 w-4 text-gray-900" />
+                  ) : (
+                    <Square className="h-4 w-4 text-gray-400" />
+                  )}
+                </button>
 
-              {/* Commit Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">{commit.message}</p>
-                  <Badge
-                    className={`${LEARNING_VALUE_COLORS[commit.learningValue]} text-white text-xs flex-shrink-0 px-1.5 py-0`}
-                  >
-                    {LEARNING_VALUE_LABELS[commit.learningValue]}
-                  </Badge>
+                {/* Commit Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-medium text-gray-900 truncate">{commit.message}</p>
+                    <Badge
+                      className={`${LEARNING_VALUE_COLORS[commit.learningValue]} text-white text-xs flex-shrink-0 px-1.5 py-0`}
+                    >
+                      {LEARNING_VALUE_LABELS[commit.learningValue]}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {commit.author}
+                    </span>
+                    <span>committed on {commit.date}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-gray-600">
-                  <span className="flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    {commit.author}
-                  </span>
-                  <span>committed on {commit.date}</span>
+
+                {/* Commit SHA */}
+                <div className="flex-shrink-0 text-xs font-mono text-gray-600">
+                  {commit.sha.substring(0, 7)}
                 </div>
               </div>
-
-              {/* Commit SHA */}
-              <div className="flex-shrink-0 text-xs font-mono text-gray-600">
-                {commit.sha.substring(0, 7)}
-              </div>
-            </div>
-          ))
+            )
+          })
         )}
       </div>
-
-      {/* Fixed Bottom Bar for Batch Learning */}
-      {selectedCommits.size > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              <span className="font-medium text-gray-900">{selectedCommits.size}개</span>의 커밋이 선택됨
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setSelectedCommits(new Set())}
-                className="border-gray-300 text-gray-600"
-              >
-                선택 해제
-              </Button>
-              <Button
-                onClick={handleStartBatchLearning}
-                className="bg-gray-900 text-white hover:bg-gray-800"
-              >
-                선택한 커밋 학습하기
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
