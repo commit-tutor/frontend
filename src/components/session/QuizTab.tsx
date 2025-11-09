@@ -42,7 +42,6 @@ export function QuizTab({
   quizAnswers,
   answeredCount,
   hasAnsweredCurrentQuestion,
-  submittedAnswers,
   hasSubmittedCurrentQuestion,
   onAnswer,
   onSubmitAnswer,
