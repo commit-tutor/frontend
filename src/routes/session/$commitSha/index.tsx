@@ -1,10 +1,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Code2, Brain } from 'lucide-react'
+import { Code2, Brain, Loader2 } from 'lucide-react'
 import { useQuiz } from '@/hooks/useQuiz'
 import { CodeReviewTab } from '@/components/session/CodeReviewTab'
 import { QuizTab } from '@/components/session/QuizTab'
+import { learningApi, type QuizQuestion, type AIAnalysis } from '@/lib/api'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 
 // Mock data - 실제 코드 변경사항 기반
 const MOCK_COMMIT = {
@@ -35,7 +38,7 @@ const MOCK_QUIZ = {
   questions: [
     {
       id: '1',
-      type: 'multiple',
+      type: 'multiple' as const,
       question: '코드 변경사항에서 Authorization 헤더를 파싱할 때 split(" ")[1]을 사용하는 이유는?',
       codeContext: `const authHeader = req.headers.authorization;
 const token = authHeader?.split(' ')[1]; // Bearer <token>`,
@@ -51,7 +54,7 @@ const token = authHeader?.split(' ')[1]; // Bearer <token>`,
     },
     {
       id: '2',
-      type: 'multiple',
+      type: 'multiple' as const,
       question: '이 커밋에서 bcrypt의 SALT_ROUNDS가 10으로 설정되어 있습니다. 이 값의 의미는?',
       codeContext: `const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
@@ -71,7 +74,7 @@ const hashPassword = async (password) => {
     },
     {
       id: '3',
-      type: 'multiple',
+      type: 'multiple' as const,
       question: '변경된 코드에서 토큰 검증 실패 시 어떤 HTTP 상태 코드를 반환하나요?',
       codeContext: `try {
   const decoded = jwt.verify(token, JWT_SECRET);
@@ -87,7 +90,7 @@ const hashPassword = async (password) => {
     },
     {
       id: '4',
-      type: 'short',
+      type: 'short' as const,
       question: '이 코드에서 JWT_SECRET을 어디에서 가져오나요? (process.env.? 형식으로 답하세요)',
       codeContext: `const JWT_SECRET = process.env.JWT_SECRET;`,
       correctAnswer: 'JWT_SECRET',
@@ -105,8 +108,64 @@ function SessionPage() {
   const { commitSha } = Route.useParams()
   const [activeTab, setActiveTab] = useState('review')
 
+  // 데이터 상태
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([])
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null)
+  const [isLoadingQuiz, setIsLoadingQuiz] = useState(true)
+  const [isLoadingReview, setIsLoadingReview] = useState(true)
+  const [quizError, setQuizError] = useState<string | null>(null)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+
   // 퀴즈 로직을 커스텀 훅으로 분리
-  const quiz = useQuiz(MOCK_QUIZ.questions)
+  const quiz = useQuiz(quizQuestions)
+
+  // 컴포넌트 마운트 시 퀴즈와 리뷰 생성
+  useEffect(() => {
+    const loadLearningData = async () => {
+      // commitSha에서 repoIdentifier와 sha 분리
+      // URL 파라미터로 전달될 때: /session/owner/repo:sha
+      // 또는 /session/repoId:sha 형식
+      const commitIdentifier = commitSha
+
+      try {
+        // 퀴즈 생성
+        setIsLoadingQuiz(true)
+        const quizResponse = await learningApi.generateQuiz({
+          commitShas: [commitIdentifier],
+          difficulty: 'medium',
+          questionCount: 5,
+        })
+        setQuizQuestions(quizResponse.questions)
+        setQuizError(null)
+      } catch (error) {
+        console.error('퀴즈 생성 실패:', error)
+        setQuizError(error instanceof Error ? error.message : '퀴즈를 생성할 수 없습니다.')
+        // 폴백: Mock 데이터 사용
+        setQuizQuestions(MOCK_QUIZ.questions as QuizQuestion[])
+      } finally {
+        setIsLoadingQuiz(false)
+      }
+
+      try {
+        // 코드 리뷰 생성
+        setIsLoadingReview(true)
+        const reviewResponse = await learningApi.generateReview({
+          commitSha: commitIdentifier,
+        })
+        setAiAnalysis(reviewResponse)
+        setReviewError(null)
+      } catch (error) {
+        console.error('리뷰 생성 실패:', error)
+        setReviewError(error instanceof Error ? error.message : '리뷰를 생성할 수 없습니다.')
+        // 폴백: Mock 데이터 사용
+        setAiAnalysis(MOCK_AI_ANALYSIS)
+      } finally {
+        setIsLoadingReview(false)
+      }
+    }
+
+    loadLearningData()
+  }, [commitSha])
 
   const handleSubmitQuiz = () => {
     navigate({ to: `/session/${commitSha}/result` })
@@ -128,36 +187,70 @@ function SessionPage() {
           <TabsTrigger value="review" className="flex items-center gap-2">
             <Code2 className="h-4 w-4" />
             커밋 분석
+            {isLoadingReview && <Loader2 className="h-3 w-3 animate-spin" />}
           </TabsTrigger>
           <TabsTrigger value="quiz" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
             퀴즈
+            {isLoadingQuiz && <Loader2 className="h-3 w-3 animate-spin" />}
           </TabsTrigger>
         </TabsList>
 
         {/* Code Review Tab */}
         <TabsContent value="review" className="mt-4">
-          <CodeReviewTab analysis={MOCK_AI_ANALYSIS} />
+          {reviewError && (
+            <Alert className="mb-4 border-yellow-500 bg-yellow-50">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                {reviewError} (Mock 데이터를 표시합니다)
+              </AlertDescription>
+            </Alert>
+          )}
+          {isLoadingReview ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <span className="ml-3 text-gray-600">AI가 코드를 분석하는 중...</span>
+            </div>
+          ) : (
+            <CodeReviewTab analysis={aiAnalysis || MOCK_AI_ANALYSIS} />
+          )}
         </TabsContent>
 
         {/* Quiz Tab */}
         <TabsContent value="quiz" className="mt-4">
-          <QuizTab
-            questions={MOCK_QUIZ.questions}
-            currentQuestionIndex={quiz.currentQuestionIndex}
-            currentQuestion={quiz.currentQuestion}
-            totalQuestions={quiz.totalQuestions}
-            isLastQuestion={quiz.isLastQuestion}
-            isFirstQuestion={quiz.isFirstQuestion}
-            quizAnswers={quiz.quizAnswers}
-            answeredCount={quiz.answeredCount}
-            hasAnsweredCurrentQuestion={quiz.hasAnsweredCurrentQuestion}
-            onAnswer={quiz.handleAnswer}
-            onNext={quiz.handleNext}
-            onPrevious={quiz.handlePrevious}
-            onSubmit={handleSubmitQuiz}
-            goToQuestion={quiz.goToQuestion}
-          />
+          {quizError && (
+            <Alert className="mb-4 border-yellow-500 bg-yellow-50">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                {quizError} (Mock 데이터를 표시합니다)
+              </AlertDescription>
+            </Alert>
+          )}
+          {isLoadingQuiz ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+              <span className="ml-3 text-gray-600">퀴즈를 생성하는 중...</span>
+            </div>
+          ) : quizQuestions.length > 0 ? (
+            <QuizTab
+              questions={quizQuestions}
+              currentQuestionIndex={quiz.currentQuestionIndex}
+              currentQuestion={quiz.currentQuestion}
+              totalQuestions={quiz.totalQuestions}
+              isLastQuestion={quiz.isLastQuestion}
+              isFirstQuestion={quiz.isFirstQuestion}
+              quizAnswers={quiz.quizAnswers}
+              answeredCount={quiz.answeredCount}
+              hasAnsweredCurrentQuestion={quiz.hasAnsweredCurrentQuestion}
+              onAnswer={quiz.handleAnswer}
+              onNext={quiz.handleNext}
+              onPrevious={quiz.handlePrevious}
+              onSubmit={handleSubmitQuiz}
+              goToQuestion={quiz.goToQuestion}
+            />
+          ) : (
+            <div className="text-center py-12 text-gray-600">퀴즈를 생성할 수 없습니다.</div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

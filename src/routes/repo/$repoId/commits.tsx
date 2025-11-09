@@ -143,10 +143,17 @@ function CommitsPage() {
 
   const handleStartBatchLearning = () => {
     if (selectedCommits.size === 0) return
-    // TODO: 여러 커밋을 한 번에 학습하는 세션으로 이동하는 로직 구현 필요
-    // 임시로 첫 번째 선택된 커밋으로 이동
-    const firstCommit = Array.from(selectedCommits)[0]
-    navigate({ to: `/session/${firstCommit}` })
+
+    // 여러 커밋을 한 번에 학습하는 세션으로 이동
+    // commitSha 형식: repoId:sha 형태로 전달
+    const commitShas = Array.from(selectedCommits)
+
+    // 첫 번째 커밋을 메인으로 사용 (다중 커밋 학습은 향후 구현)
+    const firstCommitSha = commitShas[0]
+    const commitIdentifier = `${repoId}:${firstCommitSha}`
+
+    // 세션 페이지로 이동
+    navigate({ to: `/session/${encodeURIComponent(commitIdentifier)}` })
   }
 
   return (
