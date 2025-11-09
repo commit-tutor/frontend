@@ -14,10 +14,10 @@ import {
   GitCommit,
   GitBranch,
   ChevronDown,
-  Calendar,
   User,
-  FileText,
   AlertTriangle,
+  CheckSquare,
+  Square,
 } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
 
@@ -60,6 +60,7 @@ function CommitsPage() {
   const [commits, setCommits] = useState<Commit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedCommits, setSelectedCommits] = useState<Set<string>>(new Set())
 
   // 브랜치 목록이 로드되면 첫 번째 브랜치를 선택
   useEffect(() => {
@@ -121,13 +122,30 @@ function CommitsPage() {
     }
   }, [repoId, selectedBranch])
 
-  const handleStartLearning = (commitSha: string) => {
-    navigate({ to: `/session/${commitSha}` })
-  }
-
   const handleBranchChange = (branch: string) => {
     console.log('🔄 브랜치 변경:', selectedBranch, '->', branch)
     setSelectedBranch(branch)
+    setSelectedCommits(new Set()) // 브랜치 변경 시 선택 초기화
+  }
+
+  const toggleCommitSelection = (commitSha: string) => {
+    setSelectedCommits((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(commitSha)) {
+        newSet.delete(commitSha)
+      } else {
+        newSet.add(commitSha)
+      }
+      return newSet
+    })
+  }
+
+  const handleStartBatchLearning = () => {
+    if (selectedCommits.size === 0) return
+    // TODO: 여러 커밋을 한 번에 학습하는 세션으로 이동하는 로직 구현 필요
+    // 임시로 첫 번째 선택된 커밋으로 이동
+    const firstCommit = Array.from(selectedCommits)[0]
+    navigate({ to: `/session/${firstCommit}` })
   }
 
   return (
@@ -195,113 +213,96 @@ function CommitsPage() {
         </Card>
       )}
 
-      {/* --- Commit Timeline --- */}
-      <div className="space-y-4">
+      {/* --- Commit List --- */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
         {isLoading && !error ? (
           <>
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="bg-white border-gray-200">
-                <CardContent className="p-4 space-y-3">
-                  <Skeleton className="h-4 w-3/4 bg-gray-200" />
-                  <Skeleton className="h-3 w-full bg-gray-200" />
-                  <div className="flex gap-2">
-                    <Skeleton className="h-3 w-16 bg-gray-200" />
-                    <Skeleton className="h-3 w-20 bg-gray-200" />
-                  </div>
-                  <Skeleton className="h-8 w-full bg-gray-200" />
-                </CardContent>
-              </Card>
+              <div key={i} className="p-3 border-b border-gray-200 last:border-b-0">
+                <Skeleton className="h-4 w-3/4 bg-gray-200 mb-2" />
+                <Skeleton className="h-3 w-1/2 bg-gray-200" />
+              </div>
             ))}
           </>
         ) : commits.length === 0 && !error ? (
-          <Card className="bg-white border-gray-200">
-            <CardContent className="py-12 text-center">
-              <GitCommit className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-gray-900 font-medium mb-2">{selectedBranch})</p>
-              <p className="text-sm text-gray-600">hello</p>
-            </CardContent>
-          </Card>
+          <div className="py-12 text-center">
+            <GitCommit className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+            <p className="text-gray-900 font-medium mb-2">{selectedBranch}</p>
+            <p className="text-sm text-gray-600">커밋이 없습니다</p>
+          </div>
         ) : (
           commits.map((commit, index) => (
-            <div key={commit.sha} className="relative">
-              {/* Timeline Line */}
-              {index !== commits.length - 1 && (
-                <div className="absolute left-[11px] top-12 bottom-0 w-0.5 bg-gray-200" />
-              )}
+            <div
+              key={commit.sha}
+              className={`flex items-center gap-3 px-3 py-2 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors ${
+                index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+              }`}
+            >
+              {/* Checkbox for selecting commit */}
+              <button
+                onClick={() => toggleCommitSelection(commit.sha)}
+                className="flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 rounded"
+              >
+                {selectedCommits.has(commit.sha) ? (
+                  <CheckSquare className="h-4 w-4 text-gray-900" />
+                ) : (
+                  <Square className="h-4 w-4 text-gray-400" />
+                )}
+              </button>
 
-              <div className="flex gap-3">
-                {/* Timeline Dot */}
-                <div className="relative flex-shrink-0">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                      commit.isCompleted ? 'bg-green-500' : 'bg-gray-200'
-                    }`}
+              {/* Commit Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-medium text-gray-900 truncate">{commit.message}</p>
+                  <Badge
+                    className={`${LEARNING_VALUE_COLORS[commit.learningValue]} text-white text-xs flex-shrink-0 px-1.5 py-0`}
                   >
-                    <GitCommit className="h-3 w-3 text-gray-900" />
-                  </div>
+                    {LEARNING_VALUE_LABELS[commit.learningValue]}
+                  </Badge>
                 </div>
+                <div className="flex items-center gap-3 text-xs text-gray-600">
+                  <span className="flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    {commit.author}
+                  </span>
+                  <span>committed on {commit.date}</span>
+                </div>
+              </div>
 
-                {/* Commit Card */}
-                <Card className="flex-1 bg-white border-gray-200 hover:border-gray-300 transition-colors">
-                  <CardContent className="p-4 space-y-3">
-                    {/* Commit Message */}
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium text-gray-900 line-clamp-2">
-                        {commit.message}
-                      </p>
-                      <Badge
-                        className={`${LEARNING_VALUE_COLORS[commit.learningValue]} text-gray-900 text-xs flex-shrink-0`}
-                      >
-                        {LEARNING_VALUE_LABELS[commit.learningValue]}
-                      </Badge>
-                    </div>
-
-                    {/* Commit Metadata */}
-                    <div className="flex flex-wrap gap-3 text-xs text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {commit.author}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        {commit.date}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FileText className="h-3 w-3" />
-                        {commit.filesChanged} file chagned
-                      </span>
-                    </div>
-
-                    {/* Code Changes */}
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="text-green-400">+{commit.additions}</span>
-                      <span className="text-red-400">-{commit.deletions}</span>
-                    </div>
-
-                    {/* Action Button */}
-                    {commit.isCompleted ? (
-                      <Button
-                        variant="outline"
-                        onClick={() => handleStartLearning(commit.sha)}
-                        className="w-full border-gray-300 text-gray-600"
-                      >
-                        학습하기
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => handleStartLearning(commit.sha)}
-                        className="w-full bg-gray-900 text-white hover:bg-gray-800"
-                      >
-                        학습 시작
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
+              {/* Commit SHA */}
+              <div className="flex-shrink-0 text-xs font-mono text-gray-600">
+                {commit.sha.substring(0, 7)}
               </div>
             </div>
           ))
         )}
       </div>
+
+      {/* Fixed Bottom Bar for Batch Learning */}
+      {selectedCommits.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              <span className="font-medium text-gray-900">{selectedCommits.size}개</span>의 커밋이 선택됨
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setSelectedCommits(new Set())}
+                className="border-gray-300 text-gray-600"
+              >
+                선택 해제
+              </Button>
+              <Button
+                onClick={handleStartBatchLearning}
+                className="bg-gray-900 text-white hover:bg-gray-800"
+              >
+                선택한 커밋 학습하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
