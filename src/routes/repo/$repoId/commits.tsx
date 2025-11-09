@@ -36,7 +36,7 @@ interface Commit {
   isCompleted: boolean
 }
 
-const API_BASE_URL = 'http://localhost:8000/api/v1/repo'
+const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/repo`
 
 const LEARNING_VALUE_COLORS: Record<LearningValue, string> = {
   high: 'bg-green-500',
