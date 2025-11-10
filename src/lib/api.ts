@@ -243,6 +243,20 @@ export const learningApi = {
   },
 
   /**
+   * 퀴즈와 코드 리뷰를 한 번에 생성 (통합 엔드포인트, 토큰 절약)
+   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수)
+   * @returns 퀴즈, 리뷰, 커밋 정보를 모두 포함한 객체
+   */
+  generateLearningSession: async (request: QuizGenerationRequest): Promise<{
+    quiz: QuizGenerationResponse
+    review: AIAnalysis
+    commitInfo: CommitDetailResponse
+  }> => {
+    const response = await apiClient.post('/learning/session', request)
+    return response.data
+  },
+
+  /**
    * 단일 커밋에 대한 AI 코드 리뷰 생성
    * @param request - 코드 분석 요청 (커밋 SHA, 집중 분석 영역)
    */

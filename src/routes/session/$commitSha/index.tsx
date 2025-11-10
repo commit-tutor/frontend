@@ -7,7 +7,6 @@ import { CodeReviewTab } from '@/components/session/CodeReviewTab'
 import { QuizTab } from '@/components/session/QuizTab'
 import {
   learningApi,
-  repoApi,
   type QuizQuestion,
   type AIAnalysis,
   type CommitDiffInfo,
@@ -128,7 +127,7 @@ function SessionPage() {
   // 퀴즈 로직을 커스텀 훅으로 분리
   const quiz = useQuiz(quizQuestions)
 
-  // 컴포넌트 마운트 시 퀴즈와 리뷰 생성
+  // 컴포넌트 마운트 시 퀴즈와 리뷰 생성 (통합 API 사용 - 토큰 절약)
   useEffect(() => {
     const loadLearningData = async () => {
       // commitSha 파라미터는 쉼표로 구분된 여러 커밋을 포함할 수 있음
@@ -138,62 +137,49 @@ function SessionPage() {
       console.log('📦 선택된 커밋 개수:', commitIdentifiers.length)
       console.log('📦 커밋 식별자:', commitIdentifiers)
 
-      // 첫 번째 커밋의 repoIdentifier와 sha 분리 (파일 정보용)
-      const [repoIdentifier, firstSha] = commitIdentifiers[0].split(':')
-
-      // 1. 첫 번째 커밋의 상세 정보 (diff 포함) 가져오기 - 코드 리뷰 탭에 표시용
-      try {
-        setIsLoadingFiles(true)
-        const commitDetails = await repoApi.getCommitDetails(repoIdentifier, firstSha)
-        setCommitFiles(commitDetails.files)
-        setFilesError(null)
-        console.log('✅ 커밋 파일 정보 로드 완료:', commitDetails.files.length, '개')
-      } catch (error) {
-        console.error('❌ 커밋 상세 정보 로딩 실패:', error)
-        setFilesError(error instanceof Error ? error.message : '파일 정보를 가져올 수 없습니다.')
-        setCommitFiles([])
-      } finally {
-        setIsLoadingFiles(false)
-      }
-
-      // 2. 퀴즈 생성 - 모든 선택된 커밋 사용
+      // 통합 API 호출: 퀴즈 + 리뷰 + 커밋 상세 정보를 한 번에 가져옴
       try {
         setIsLoadingQuiz(true)
-        console.log('🎯 퀴즈 생성 요청: ', commitIdentifiers)
-        const quizResponse = await learningApi.generateQuiz({
-          commitShas: commitIdentifiers, // 모든 커밋 전달
+        setIsLoadingReview(true)
+        setIsLoadingFiles(true)
+
+        console.log('🚀 통합 학습 세션 생성 요청 (단일 LLM 호출로 퀴즈 + 리뷰)')
+        const sessionData = await learningApi.generateLearningSession({
+          commitShas: commitIdentifiers,
           difficulty: 'medium',
           questionCount: 5,
         })
-        setQuizQuestions(quizResponse.questions)
-        setQuizError(null)
-        console.log('✅ 퀴즈 생성 완료:', quizResponse.questions.length, '개')
-      } catch (error) {
-        console.error('❌ 퀴즈 생성 실패:', error)
-        setQuizError(error instanceof Error ? error.message : '퀴즈를 생성할 수 없습니다.')
-        // 폴백: Mock 데이터 사용
-        setQuizQuestions(MOCK_QUIZ.questions as QuizQuestion[])
-      } finally {
-        setIsLoadingQuiz(false)
-      }
 
-      // 3. 코드 리뷰 생성 - 첫 번째 커밋 사용 (여러 커밋 리뷰는 향후 개선)
-      try {
-        setIsLoadingReview(true)
-        console.log('📝 코드 리뷰 생성 요청: ', commitIdentifiers[0])
-        const reviewResponse = await learningApi.generateReview({
-          commitSha: commitIdentifiers[0],
-        })
-        setAiAnalysis(reviewResponse)
+        // 퀴즈 설정
+        setQuizQuestions(sessionData.quiz.questions)
+        setQuizError(null)
+        console.log('✅ 퀴즈 생성 완료:', sessionData.quiz.questions.length, '개')
+
+        // 리뷰 설정
+        setAiAnalysis(sessionData.review)
         setReviewError(null)
         console.log('✅ 코드 리뷰 생성 완료')
+
+        // 커밋 파일 정보 설정
+        setCommitFiles(sessionData.commitInfo.files)
+        setFilesError(null)
+        console.log('✅ 커밋 파일 정보 로드 완료:', sessionData.commitInfo.files.length, '개')
       } catch (error) {
-        console.error('❌ 리뷰 생성 실패:', error)
-        setReviewError(error instanceof Error ? error.message : '리뷰를 생성할 수 없습니다.')
-        // 폴백: Mock 데이터 사용
+        console.error('❌ 통합 학습 세션 생성 실패:', error)
+        const errorMessage = error instanceof Error ? error.message : '학습 세션을 생성할 수 없습니다.'
+
+        // 각 상태에 에러 설정 및 Mock 데이터 사용
+        setQuizError(errorMessage)
+        setReviewError(errorMessage)
+        setFilesError(errorMessage)
+
+        setQuizQuestions(MOCK_QUIZ.questions as QuizQuestion[])
         setAiAnalysis(MOCK_AI_ANALYSIS)
+        setCommitFiles([])
       } finally {
+        setIsLoadingQuiz(false)
         setIsLoadingReview(false)
+        setIsLoadingFiles(false)
       }
     }
 
