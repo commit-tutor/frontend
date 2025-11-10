@@ -1,12 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Code2, Brain, Loader2 } from 'lucide-react'
+import { Code2, Brain, Loader2, Sparkles } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useQuiz } from '@/hooks/useQuiz'
 import { CodeReviewTab } from '@/components/session/CodeReviewTab'
 import { QuizTab } from '@/components/session/QuizTab'
 import {
   learningApi,
+  repoApi,
   type QuizQuestion,
   type AIAnalysis,
   type CommitDiffInfo,
@@ -14,284 +16,255 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
-// Mock data - 실제 코드 변경사항 기반
-const MOCK_COMMIT = {
-  sha: 'abc123',
-  message: 'feat: Add user authentication with JWT',
-  author: 'johndoe',
-  date: '2025-10-25',
-}
-
-const MOCK_AI_ANALYSIS = {
-  summary:
-    '이 커밋은 JWT를 사용한 사용자 인증 시스템을 구현했습니다. Express 미들웨어와 함께 토큰 기반 인증을 설정하고, 보안을 강화하기 위한 여러 조치를 취했습니다.',
-  quality: {
-    readability: 85,
-    performance: 78,
-    security: 92,
-  },
-  suggestions: [
-    '환경 변수로 JWT secret을 관리하는 것이 좋습니다',
-    'Token 만료 시간을 설정하여 보안을 강화하세요',
-    '에러 핸들링을 더 구체적으로 개선할 수 있습니다',
-  ],
-  potentialBugs: ['비밀번호 해싱 알고리즘의 salt rounds가 너무 낮을 수 있습니다'],
-}
-
-// 코드 변경사항 기반으로 생성된 퀴즈
-const MOCK_QUIZ = {
-  questions: [
-    {
-      id: '1',
-      type: 'multiple' as const,
-      question: '코드 변경사항에서 Authorization 헤더를 파싱할 때 split(" ")[1]을 사용하는 이유는?',
-      codeContext: `const authHeader = req.headers.authorization;
-const token = authHeader?.split(' ')[1]; // Bearer <token>`,
-      options: [
-        '"Bearer " 접두사를 제거하고 실제 토큰만 추출하기 위해',
-        '토큰을 두 부분으로 나누어 검증하기 위해',
-        '공백을 제거하기 위해',
-        '배열로 변환하기 위해',
-      ],
-      correctAnswer: 0,
-      explanation:
-        'JWT 인증에서는 "Bearer <token>" 형식으로 전송되므로, split(" ")[1]을 사용하여 실제 토큰 부분만 추출합니다.',
-    },
-    {
-      id: '2',
-      type: 'multiple' as const,
-      question: '이 커밋에서 bcrypt의 SALT_ROUNDS가 10으로 설정되어 있습니다. 이 값의 의미는?',
-      codeContext: `const bcrypt = require('bcrypt');
-const SALT_ROUNDS = 10;
-
-const hashPassword = async (password) => {
-  return await bcrypt.hash(password, SALT_ROUNDS);
-};`,
-      options: [
-        '해싱을 10번 반복한다',
-        '2^10번의 해싱 라운드를 수행한다',
-        '10자리 salt를 생성한다',
-        '10초 동안 해싱한다',
-      ],
-      correctAnswer: 1,
-      explanation:
-        'bcrypt의 SALT_ROUNDS는 cost factor로, 2^10 = 1024번의 해싱 라운드를 의미합니다. 값이 클수록 더 안전하지만 느려집니다.',
-    },
-    {
-      id: '3',
-      type: 'multiple' as const,
-      question: '변경된 코드에서 토큰 검증 실패 시 어떤 HTTP 상태 코드를 반환하나요?',
-      codeContext: `try {
-  const decoded = jwt.verify(token, JWT_SECRET);
-  req.user = decoded;
-  next();
-} catch (error) {
-  return res.status(403).json({ error: 'Invalid token' });
-}`,
-      options: ['401 Unauthorized', '403 Forbidden', '400 Bad Request', '500 Internal Server Error'],
-      correctAnswer: 1,
-      explanation:
-        '토큰이 존재하지만 유효하지 않은 경우 403 Forbidden을 반환합니다. 401은 토큰이 없을 때 사용됩니다.',
-    },
-    {
-      id: '4',
-      type: 'short' as const,
-      question: '이 코드에서 JWT_SECRET을 어디에서 가져오나요? (process.env.? 형식으로 답하세요)',
-      codeContext: `const JWT_SECRET = process.env.JWT_SECRET;`,
-      correctAnswer: 'JWT_SECRET',
-      explanation: '환경 변수에서 JWT_SECRET을 가져와 보안을 강화합니다. 하드코딩하면 안 됩니다.',
-    },
-  ],
-}
-
 /**
  * 학습 세션 페이지 - 코드 리뷰 & 퀴즈
- * 컨테이너 컴포넌트: 비즈니스 로직과 데이터 관리
+ * 2단계 로딩: 1) 커밋 정보 + diff 표시 → 2) 사용자 버튼 클릭 시 AI 생성
  */
 function SessionPage() {
   const navigate = useNavigate()
   const { commitSha } = Route.useParams()
   const [activeTab, setActiveTab] = useState('review')
 
+  // Router state에서 커밋 정보 가져오기
+  const routerState = (window.history.state as any)?.usr?.commitInfo
+
   // 데이터 상태
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([])
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null)
   const [commitFiles, setCommitFiles] = useState<CommitDiffInfo[]>([])
-  const [isLoadingQuiz, setIsLoadingQuiz] = useState(true)
-  const [isLoadingReview, setIsLoadingReview] = useState(true)
-  const [isLoadingFiles, setIsLoadingFiles] = useState(true)
-  const [quizError, setQuizError] = useState<string | null>(null)
-  const [reviewError, setReviewError] = useState<string | null>(null)
-  const [filesError, setFilesError] = useState<string | null>(null)
+  const [commitInfo, setCommitInfo] = useState<{
+    sha: string
+    message: string
+    author: string
+    date: string
+  } | null>(routerState || null)
 
-  // 퀴즈 로직을 커스텀 훅으로 분리
+  // 로딩 상태
+  const [isLoadingFiles, setIsLoadingFiles] = useState(true)
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false) // AI 생성 중
+  const [hasGeneratedAI, setHasGeneratedAI] = useState(false) // AI 생성 완료 여부
+
+  // 에러 상태
+  const [filesError, setFilesError] = useState<string | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
+
+  // 퀴즈 로직
   const quiz = useQuiz(quizQuestions)
 
-  // 컴포넌트 마운트 시 퀴즈와 리뷰 생성 (통합 API 사용 - 토큰 절약)
+  // 1단계: 페이지 진입 시 커밋 파일(diff) 정보만 먼저 로드
   useEffect(() => {
-    const loadLearningData = async () => {
-      // commitSha 파라미터는 쉼표로 구분된 여러 커밋을 포함할 수 있음
-      // 형식: "repoId:sha1,repoId:sha2,repoId:sha3"
+    const loadCommitFiles = async () => {
       const commitIdentifiers = commitSha.split(',').map((id) => id.trim())
 
-      console.log('📦 선택된 커밋 개수:', commitIdentifiers.length)
-      console.log('📦 커밋 식별자:', commitIdentifiers)
+      console.log('📦 커밋 파일 정보 로드 시작:', commitIdentifiers)
 
-      // 통합 API 호출: 퀴즈 + 리뷰 + 커밋 상세 정보를 한 번에 가져옴
       try {
-        setIsLoadingQuiz(true)
-        setIsLoadingReview(true)
         setIsLoadingFiles(true)
 
-        console.log('🚀 통합 학습 세션 생성 요청 (단일 LLM 호출로 퀴즈 + 리뷰)')
-        const sessionData = await learningApi.generateLearningSession({
-          commitShas: commitIdentifiers,
-          difficulty: 'medium',
-          questionCount: 5,
+        // GitHub API에서 커밋 상세 정보만 가져오기 (LLM 호출 없음)
+        const firstCommitId = commitIdentifiers[0]
+        const [repoIdentifier, sha] = firstCommitId.split(':')
+
+        const response = await repoApi.getCommitDetails(repoIdentifier, sha)
+
+        setCommitFiles(response.files || [])
+        setCommitInfo({
+          sha: response.sha,
+          message: response.message,
+          author: response.author,
+          date: response.date,
         })
-
-        // 퀴즈 설정
-        setQuizQuestions(sessionData.quiz.questions)
-        setQuizError(null)
-        console.log('✅ 퀴즈 생성 완료:', sessionData.quiz.questions.length, '개')
-
-        // 리뷰 설정
-        setAiAnalysis(sessionData.review)
-        setReviewError(null)
-        console.log('✅ 코드 리뷰 생성 완료')
-
-        // 커밋 파일 정보 설정
-        setCommitFiles(sessionData.commitInfo.files)
         setFilesError(null)
-        console.log('✅ 커밋 파일 정보 로드 완료:', sessionData.commitInfo.files.length, '개')
+        console.log('✅ 커밋 파일 정보 로드 완료:', response.files?.length || 0, '개')
       } catch (error) {
-        console.error('❌ 통합 학습 세션 생성 실패:', error)
-        const errorMessage = error instanceof Error ? error.message : '학습 세션을 생성할 수 없습니다.'
-
-        // 각 상태에 에러 설정 및 Mock 데이터 사용
-        setQuizError(errorMessage)
-        setReviewError(errorMessage)
-        setFilesError(errorMessage)
-
-        setQuizQuestions(MOCK_QUIZ.questions as QuizQuestion[])
-        setAiAnalysis(MOCK_AI_ANALYSIS)
+        console.error('❌ 커밋 파일 로드 실패:', error)
+        setFilesError(error instanceof Error ? error.message : '파일 정보를 불러올 수 없습니다')
         setCommitFiles([])
       } finally {
-        setIsLoadingQuiz(false)
-        setIsLoadingReview(false)
         setIsLoadingFiles(false)
       }
     }
 
-    loadLearningData()
+    loadCommitFiles()
   }, [commitSha])
+
+  // 2단계: 사용자가 버튼 클릭 시 AI 생성 (퀴즈 + 리뷰)
+  const handleGenerateAI = async () => {
+    const commitIdentifiers = commitSha.split(',').map((id) => id.trim())
+
+    console.log('🚀 AI 생성 시작 (퀴즈 + 리뷰)')
+
+    try {
+      setIsGeneratingAI(true)
+      setAiError(null)
+
+      const sessionData = await learningApi.generateLearningSession({
+        commitShas: commitIdentifiers,
+        difficulty: 'medium',
+        questionCount: 5,
+      })
+
+      // 퀴즈 설정
+      setQuizQuestions(sessionData.quiz.questions)
+      console.log('✅ 퀴즈 생성 완료:', sessionData.quiz.questions.length, '개')
+
+      // 리뷰 설정
+      setAiAnalysis(sessionData.review)
+      console.log('✅ 코드 리뷰 생성 완료')
+
+      setHasGeneratedAI(true)
+    } catch (error) {
+      console.error('❌ AI 생성 실패:', error)
+      const errorMessage = error instanceof Error ? error.message : 'AI 생성 중 오류가 발생했습니다'
+      setAiError(errorMessage)
+      // AI 생성 실패 시 사용자가 다시 시도할 수 있도록 상태 유지
+    } finally {
+      setIsGeneratingAI(false)
+    }
+  }
 
   const handleSubmitQuiz = () => {
     navigate({ to: `/session/${commitSha}/result` })
   }
 
-  // 선택된 커밋 개수 계산
   const commitCount = commitSha.split(',').length
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* Commit Header */}
+      {/* Commit Header - 항상 표시 */}
       <div>
         <h1 className="text-xl font-bold text-gray-900 mb-1 line-clamp-2">
-          {commitCount > 1 ? `${commitCount}개의 커밋 학습` : MOCK_COMMIT.message}
+          {commitCount > 1 ? `${commitCount}개의 커밋 학습` : commitInfo?.message || '로딩 중...'}
         </h1>
         <p className="text-xs text-gray-600">
           {commitCount > 1
             ? `선택된 ${commitCount}개 커밋을 기반으로 퀴즈와 코드 리뷰 생성`
-            : `${MOCK_COMMIT.author} · ${MOCK_COMMIT.date} · ${commitSha.slice(0, 7)}`}
+            : commitInfo
+              ? `${commitInfo.author} · ${commitInfo.date} · ${commitInfo.sha.slice(0, 7)}`
+              : '커밋 정보를 불러오는 중...'}
         </p>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="review" className="flex items-center gap-2">
-            <Code2 className="h-4 w-4" />
-            커밋 분석
-            {isLoadingReview && <Loader2 className="h-3 w-3 animate-spin" />}
-          </TabsTrigger>
-          <TabsTrigger value="quiz" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            퀴즈
-            {isLoadingQuiz && <Loader2 className="h-3 w-3 animate-spin" />}
-          </TabsTrigger>
-        </TabsList>
+      {/* AI 생성 버튼 - 파일 로딩 완료 후 표시 */}
+      {!isLoadingFiles && !hasGeneratedAI && (
+        <div className="flex flex-col items-center justify-center py-8 space-y-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300">
+          <Sparkles className="h-12 w-12 text-gray-400" />
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">AI 분석 준비 완료</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              커밋 코드를 분석하여 맞춤형 퀴즈와 리뷰를 생성합니다
+            </p>
+            <Button
+              onClick={handleGenerateAI}
+              disabled={isGeneratingAI}
+              className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2"
+              size="lg"
+            >
+              {isGeneratingAI ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  AI 생성 중...
+                </>
+              ) : (
+                <>
+                  <Brain className="mr-2 h-4 w-4" />
+                  코드 분석 & 퀴즈 생성하기
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
 
-        {/* Code Review Tab */}
-        <TabsContent value="review" className="mt-4">
-          {reviewError && (
-            <Alert className="mb-4 border-yellow-500 bg-yellow-50">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-800">
-                {reviewError} (Mock 데이터를 표시합니다)
-              </AlertDescription>
-            </Alert>
-          )}
-          {filesError && (
-            <Alert className="mb-4 border-red-500 bg-red-50">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                파일 변경사항 로딩 실패: {filesError}
-              </AlertDescription>
-            </Alert>
-          )}
-          {isLoadingReview || isLoadingFiles ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              <span className="ml-3 text-gray-600">
-                {isLoadingFiles ? '코드 변경사항을 불러오는 중...' : 'AI가 코드를 분석하는 중...'}
-              </span>
-            </div>
-          ) : (
-            <CodeReviewTab analysis={aiAnalysis || MOCK_AI_ANALYSIS} files={commitFiles} />
-          )}
-        </TabsContent>
+      {/* AI 생성 중 표시 */}
+      {isGeneratingAI && (
+        <Alert className="border-blue-500 bg-blue-50">
+          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            AI가 코드를 분석하고 퀴즈를 생성하는 중입니다... (약 10-15초 소요)
+          </AlertDescription>
+        </Alert>
+      )}
 
-        {/* Quiz Tab */}
-        <TabsContent value="quiz" className="mt-4">
-          {quizError && (
-            <Alert className="mb-4 border-yellow-500 bg-yellow-50">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-800">
-                {quizError} (Mock 데이터를 표시합니다)
-              </AlertDescription>
-            </Alert>
-          )}
-          {isLoadingQuiz ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              <span className="ml-3 text-gray-600">퀴즈를 생성하는 중...</span>
-            </div>
-          ) : quizQuestions.length > 0 ? (
-            <QuizTab
-              questions={quizQuestions}
-              currentQuestionIndex={quiz.currentQuestionIndex}
-              currentQuestion={quiz.currentQuestion}
-              totalQuestions={quiz.totalQuestions}
-              isLastQuestion={quiz.isLastQuestion}
-              isFirstQuestion={quiz.isFirstQuestion}
-              quizAnswers={quiz.quizAnswers}
-              answeredCount={quiz.answeredCount}
-              hasAnsweredCurrentQuestion={quiz.hasAnsweredCurrentQuestion}
-              submittedAnswers={quiz.submittedAnswers}
-              hasSubmittedCurrentQuestion={quiz.hasSubmittedCurrentQuestion}
-              onAnswer={quiz.handleAnswer}
-              onSubmitAnswer={quiz.handleSubmitAnswer}
-              onNext={quiz.handleNext}
-              onPrevious={quiz.handlePrevious}
-              onSubmit={handleSubmitQuiz}
-              goToQuestion={quiz.goToQuestion}
+      {/* AI 생성 에러 */}
+      {aiError && (
+        <Alert className="border-red-500 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            {aiError}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Tabs - 파일 로딩 완료 후 표시 */}
+      {!isLoadingFiles && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="review" className="flex items-center gap-2">
+              <Code2 className="h-4 w-4" />
+              커밋 분석
+            </TabsTrigger>
+            <TabsTrigger value="quiz" className="flex items-center gap-2" disabled={!hasGeneratedAI}>
+              <Brain className="h-4 w-4" />
+              퀴즈
+              {!hasGeneratedAI && <span className="text-xs">(생성 필요)</span>}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Code Review Tab - diff는 항상 표시 */}
+          <TabsContent value="review" className="mt-4">
+            {filesError && (
+              <Alert className="mb-4 border-red-500 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  파일 변경사항 로딩 실패: {filesError}
+                </AlertDescription>
+              </Alert>
+            )}
+            <CodeReviewTab
+              analysis={aiAnalysis}
+              files={commitFiles}
             />
-          ) : (
-            <div className="text-center py-12 text-gray-600">퀴즈를 생성할 수 없습니다.</div>
-          )}
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+
+          {/* Quiz Tab - AI 생성 후 표시 */}
+          <TabsContent value="quiz" className="mt-4">
+            {hasGeneratedAI && quizQuestions.length > 0 ? (
+              <QuizTab
+                questions={quizQuestions}
+                currentQuestionIndex={quiz.currentQuestionIndex}
+                currentQuestion={quiz.currentQuestion}
+                totalQuestions={quiz.totalQuestions}
+                isLastQuestion={quiz.isLastQuestion}
+                isFirstQuestion={quiz.isFirstQuestion}
+                quizAnswers={quiz.quizAnswers}
+                answeredCount={quiz.answeredCount}
+                hasAnsweredCurrentQuestion={quiz.hasAnsweredCurrentQuestion}
+                submittedAnswers={quiz.submittedAnswers}
+                hasSubmittedCurrentQuestion={quiz.hasSubmittedCurrentQuestion}
+                onAnswer={quiz.handleAnswer}
+                onSubmitAnswer={quiz.handleSubmitAnswer}
+                onNext={quiz.handleNext}
+                onPrevious={quiz.handlePrevious}
+                onSubmit={handleSubmitQuiz}
+                goToQuestion={quiz.goToQuestion}
+              />
+            ) : (
+              <div className="text-center py-12 text-gray-600">
+                퀴즈를 먼저 생성해주세요
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      {/* 파일 로딩 중 */}
+      {isLoadingFiles && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <span className="ml-3 text-gray-600">커밋 정보를 불러오는 중...</span>
+        </div>
+      )}
     </div>
   )
 }
