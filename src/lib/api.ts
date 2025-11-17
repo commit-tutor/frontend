@@ -130,11 +130,6 @@ export type AIAnalysis = {
   potentialBugs: string[]
 }
 
-export type CodeAnalysisRequest = {
-  commitSha: string
-  focusAreas?: string[]
-}
-
 export type CommitDiffInfo = {
   filename: string
   status: string
@@ -234,16 +229,7 @@ export const repoApi = {
 // Learning API
 export const learningApi = {
   /**
-   * 선택한 커밋들로 퀴즈 생성
-   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수)
-   */
-  generateQuiz: async (request: QuizGenerationRequest): Promise<QuizGenerationResponse> => {
-    const response = await apiClient.post<QuizGenerationResponse>('/learning/quiz', request)
-    return response.data
-  },
-
-  /**
-   * 퀴즈와 코드 리뷰를 한 번에 생성 (통합 엔드포인트, 토큰 절약)
+   * 퀴즈와 코드 리뷰를 한 번에 생성 (통합 엔드포인트)
    * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수)
    * @returns 퀴즈, 리뷰, 커밋 정보를 모두 포함한 객체
    */
@@ -253,15 +239,6 @@ export const learningApi = {
     commitInfo: CommitDetailResponse
   }> => {
     const response = await apiClient.post('/learning/session', request)
-    return response.data
-  },
-
-  /**
-   * 단일 커밋에 대한 AI 코드 리뷰 생성
-   * @param request - 코드 분석 요청 (커밋 SHA, 집중 분석 영역)
-   */
-  generateReview: async (request: CodeAnalysisRequest): Promise<AIAnalysis> => {
-    const response = await apiClient.post<AIAnalysis>('/learning/review', request)
     return response.data
   },
 }
