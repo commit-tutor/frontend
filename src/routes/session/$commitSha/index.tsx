@@ -11,7 +11,6 @@ import {
   learningApi,
   repoApi,
   type QuizQuestion,
-  type AIAnalysis,
   type CommitDiffInfo,
   type LearningTopic,
 } from '@/lib/api'
@@ -19,8 +18,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
 
 /**
- * 학습 세션 페이지 - 코드 리뷰 & 퀴즈
- * 2단계 로딩: 1) 커밋 정보 + diff 표시 → 2) 사용자 버튼 클릭 시 AI 생성
+ * 학습 세션 페이지 - 코드 분석 & 퀴즈
+ * 플로우: 1) 커밋 파일 로드 → 2) 주제 추출 → 3) 주제 선택 → 4) 퀴즈 생성 & 학습
  */
 function SessionPage() {
   const navigate = useNavigate()
@@ -32,7 +31,6 @@ function SessionPage() {
 
   // 데이터 상태
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([])
-  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null)
   const [commitFiles, setCommitFiles] = useState<CommitDiffInfo[]>([])
   const [commitInfo, setCommitInfo] = useState<{
     sha: string
@@ -46,8 +44,8 @@ function SessionPage() {
   // 로딩 상태
   const [isLoadingFiles, setIsLoadingFiles] = useState(true)
   const [isLoadingTopics, setIsLoadingTopics] = useState(false)
-  const [isGeneratingAI, setIsGeneratingAI] = useState(false) // AI 생성 중
-  const [hasGeneratedAI, setHasGeneratedAI] = useState(false) // AI 생성 완료 여부
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false)
+  const [hasGeneratedAI, setHasGeneratedAI] = useState(false)
   const [hasExtractedTopics, setHasExtractedTopics] = useState(false)
 
   // 에러 상태
@@ -58,7 +56,7 @@ function SessionPage() {
   // 퀴즈 로직
   const quiz = useQuiz(quizQuestions)
 
-  // 1단계: 페이지 진입 시 커밋 파일(diff) 정보만 먼저 로드
+  // 1단계: 페이지 진입 시 커밋 파일(diff) 정보 먼저 로드
   useEffect(() => {
     const loadCommitFiles = async () => {
       const commitIdentifiers = commitSha.split(',').map((id) => id.trim())
@@ -68,7 +66,7 @@ function SessionPage() {
       try {
         setIsLoadingFiles(true)
 
-        // GitHub API에서 커밋 상세 정보만 가져오기 (LLM 호출 없음)
+        // GitHub API에서 커밋 상세 정보 가져오기
         const firstCommitId = commitIdentifiers[0]
         const [repoIdentifier, sha] = firstCommitId.split(':')
 
@@ -114,18 +112,19 @@ function SessionPage() {
       console.log('✅ 주제 추출 완료:', topicsData.topics.length, '개')
     } catch (error) {
       console.error('❌ 주제 추출 실패:', error)
-      const errorMessage = error instanceof Error ? error.message : '주제 추출 중 오류가 발생했습니다'
+      const errorMessage =
+        error instanceof Error ? error.message : '주제 추출 중 오류가 발생했습니다'
       setTopicsError(errorMessage)
     } finally {
       setIsLoadingTopics(false)
     }
   }
 
-  // 3단계: 사용자가 주제 선택 후 AI 생성 (퀴즈 + 리뷰)
+  // 3단계: 퀴즈 생성 (주제 선택 후)
   const handleGenerateAI = async () => {
     const commitIdentifiers = commitSha.split(',').map((id) => id.trim())
 
-    console.log('🚀 AI 생성 시작 (퀴즈 + 리뷰)')
+    console.log('🚀 퀴즈 생성 시작')
 
     try {
       setIsGeneratingAI(true)
@@ -146,16 +145,12 @@ function SessionPage() {
       setQuizQuestions(sessionData.quiz.questions)
       console.log('✅ 퀴즈 생성 완료:', sessionData.quiz.questions.length, '개')
 
-      // 리뷰 설정
-      setAiAnalysis(sessionData.review)
-      console.log('✅ 코드 리뷰 생성 완료')
-
       setHasGeneratedAI(true)
     } catch (error) {
-      console.error('❌ AI 생성 실패:', error)
-      const errorMessage = error instanceof Error ? error.message : 'AI 생성 중 오류가 발생했습니다'
+      console.error('❌ 퀴즈 생성 실패:', error)
+      const errorMessage =
+        error instanceof Error ? error.message : '퀴즈 생성 중 오류가 발생했습니다'
       setAiError(errorMessage)
-      // AI 생성 실패 시 사용자가 다시 시도할 수 있도록 상태 유지
     } finally {
       setIsGeneratingAI(false)
     }
@@ -169,21 +164,21 @@ function SessionPage() {
 
   return (
     <div className="flex flex-col space-y-4">
-      {/* Commit Header - 항상 표시 */}
+      {/* Commit Header */}
       <div>
         <h1 className="text-xl font-bold text-gray-900 mb-1 line-clamp-2">
           {commitCount > 1 ? `${commitCount}개의 커밋 학습` : commitInfo?.message || '로딩 중...'}
         </h1>
         <p className="text-xs text-gray-600">
           {commitCount > 1
-            ? `선택된 ${commitCount}개 커밋을 기반으로 퀴즈와 코드 리뷰 생성`
+            ? `선택된 ${commitCount}개 커밋을 기반으로 퀴즈 생성`
             : commitInfo
               ? `${commitInfo.author} · ${commitInfo.date} · ${commitInfo.sha.slice(0, 7)}`
               : '커밋 정보를 불러오는 중...'}
         </p>
       </div>
 
-      {/* 1단계: 주제 추출 버튼 - 파일 로딩 완료 후 표시 */}
+      {/* 주제 추출 버튼 - 파일 로딩 완료 후 & 주제 미추출 & 퀴즈 미생성 시 */}
       {!isLoadingFiles && !hasExtractedTopics && !hasGeneratedAI && (
         <div className="flex flex-col items-center justify-center py-8 space-y-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300">
           <Sparkles className="h-12 w-12 text-gray-400" />
@@ -214,7 +209,7 @@ function SessionPage() {
         </div>
       )}
 
-      {/* 2단계: 주제 선택 및 AI 생성 버튼 */}
+      {/* 주제 선택 및 퀴즈 생성 버튼 */}
       {hasExtractedTopics && !hasGeneratedAI && (
         <div className="space-y-4">
           <TopicSelector
@@ -232,7 +227,7 @@ function SessionPage() {
               {isGeneratingAI ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  AI 생성 중...
+                  퀴즈 생성 중...
                 </>
               ) : (
                 <>
@@ -245,12 +240,12 @@ function SessionPage() {
         </div>
       )}
 
-      {/* AI 생성 중 표시 */}
+      {/* 퀴즈 생성 중 표시 */}
       {isGeneratingAI && (
         <Alert className="border-blue-500 bg-blue-50">
           <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
           <AlertDescription className="text-blue-800">
-            AI가 코드를 분석하고 퀴즈를 생성하는 중입니다... (약 10-15초 소요)
+            AI가 퀴즈를 생성하는 중입니다... (약 10-15초 소요)
           </AlertDescription>
         </Alert>
       )}
@@ -265,13 +260,11 @@ function SessionPage() {
         </Alert>
       )}
 
-      {/* AI 생성 에러 */}
+      {/* 퀴즈 생성 에러 */}
       {aiError && (
         <Alert className="border-red-500 bg-red-50">
           <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            {aiError}
-          </AlertDescription>
+          <AlertDescription className="text-red-800">{aiError}</AlertDescription>
         </Alert>
       )}
 
@@ -281,16 +274,20 @@ function SessionPage() {
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="review" className="flex items-center gap-2">
               <Code2 className="h-4 w-4" />
-              커밋 분석
+              코드 변경사항
             </TabsTrigger>
-            <TabsTrigger value="quiz" className="flex items-center gap-2" disabled={!hasGeneratedAI}>
+            <TabsTrigger
+              value="quiz"
+              className="flex items-center gap-2"
+              disabled={!hasGeneratedAI}
+            >
               <Brain className="h-4 w-4" />
               퀴즈
               {!hasGeneratedAI && <span className="text-xs">(생성 필요)</span>}
             </TabsTrigger>
           </TabsList>
 
-          {/* Code Review Tab - diff는 항상 표시 */}
+          {/* Code Review Tab - diff는 항상 표시 (AI 리뷰 없음) */}
           <TabsContent value="review" className="mt-4">
             {filesError && (
               <Alert className="mb-4 border-red-500 bg-red-50">
@@ -300,13 +297,10 @@ function SessionPage() {
                 </AlertDescription>
               </Alert>
             )}
-            <CodeReviewTab
-              analysis={aiAnalysis}
-              files={commitFiles}
-            />
+            <CodeReviewTab analysis={null} files={commitFiles} />
           </TabsContent>
 
-          {/* Quiz Tab - AI 생성 후 표시 */}
+          {/* Quiz Tab - 퀴즈 생성 후 표시 */}
           <TabsContent value="quiz" className="mt-4">
             {hasGeneratedAI && quizQuestions.length > 0 ? (
               <QuizTab
@@ -329,9 +323,7 @@ function SessionPage() {
                 goToQuestion={quiz.goToQuestion}
               />
             ) : (
-              <div className="text-center py-12 text-gray-600">
-                퀴즈를 먼저 생성해주세요
-              </div>
+              <div className="text-center py-12 text-gray-600">퀴즈를 먼저 생성해주세요</div>
             )}
           </TabsContent>
         </Tabs>

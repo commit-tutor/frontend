@@ -52,28 +52,19 @@ export function TopicSelector({ topics, selectedTopicId, onSelectTopic }: TopicS
             <Card
               key={topic.id}
               className={`p-4 cursor-pointer transition-all hover:shadow-md ${
-                isSelected
-                  ? 'ring-2 ring-gray-900 bg-gray-50'
-                  : 'hover:border-gray-400'
+                isSelected ? 'ring-2 ring-gray-900 bg-gray-50' : 'hover:border-gray-400'
               }`}
               onClick={() => onSelectTopic(isSelected ? null : topic.id)}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold text-gray-900 text-sm">
-                      {topic.title}
-                    </h4>
-                    <Badge
-                      variant="outline"
-                      className={`text-xs ${difficultyColor}`}
-                    >
+                    <h4 className="font-semibold text-gray-900 text-sm">{topic.title}</h4>
+                    <Badge variant="outline" className={`text-xs ${difficultyColor}`}>
                       {topic.difficulty}
                     </Badge>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                    {topic.description}
-                  </p>
+                  <p className="text-xs text-gray-600 mb-3 line-clamp-2">{topic.description}</p>
                   <div className="flex flex-wrap gap-1">
                     {topic.keywords.slice(0, 4).map((keyword) => (
                       <span
@@ -84,19 +75,10 @@ export function TopicSelector({ topics, selectedTopicId, onSelectTopic }: TopicS
                       </span>
                     ))}
                     {topic.keywords.length > 4 && (
-                      <span className="text-xs text-gray-400">
-                        +{topic.keywords.length - 4}
-                      </span>
+                      <span className="text-xs text-gray-400">+{topic.keywords.length - 4}</span>
                     )}
                   </div>
                 </div>
-                {isSelected && (
-                  <div className="flex-shrink-0">
-                    <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center">
-                      <Check className="h-4 w-4 text-white" />
-                    </div>
-                  </div>
-                )}
               </div>
             </Card>
           )
@@ -104,9 +86,7 @@ export function TopicSelector({ topics, selectedTopicId, onSelectTopic }: TopicS
       </div>
 
       {topics.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          추출된 주제가 없습니다
-        </div>
+        <div className="text-center py-8 text-gray-500">추출된 주제가 없습니다</div>
       )}
     </div>
   )

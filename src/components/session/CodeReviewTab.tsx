@@ -90,90 +90,9 @@ const renderDiffLines = (patch: string | undefined) => {
   )
 }
 
-export function CodeReviewTab({ analysis, files }: CodeReviewTabProps) {
+export function CodeReviewTab({ files }: CodeReviewTabProps) {
   return (
     <div className="space-y-4">
-      {/* AI 분석이 생성되었을 때만 표시 */}
-      {analysis ? (
-        <>
-          {/* AI Summary */}
-          <Card className="bg-white border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-base text-gray-900">AI 분석 요약</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-700">{analysis.summary}</p>
-            </CardContent>
-          </Card>
-
-          {/* Code Quality */}
-          <Card className="bg-white border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-base text-gray-900">코드 품질</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {Object.entries(analysis.quality).map(([key, value]) => (
-                <div key={key}>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600 capitalize">{key}</span>
-                    <span className="text-gray-900 font-medium">{value}/100</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        value >= 80 ? 'bg-green-500' : value >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Suggestions */}
-          <Card className="bg-white border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-base text-gray-900 flex items-center gap-2">
-                <Lightbulb className="h-4 w-4 text-yellow-400" />
-                개선 제안
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {analysis.suggestions.map((suggestion, index) => (
-                <Alert key={index} className="bg-gray-100 border-gray-200">
-                  <AlertDescription className="text-sm text-gray-700">• {suggestion}</AlertDescription>
-                </Alert>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Potential Bugs */}
-          {analysis.potentialBugs.length > 0 && (
-            <Card className="bg-red-50 border-red-200">
-              <CardHeader>
-                <CardTitle className="text-base text-gray-900 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  잠재적 이슈
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {analysis.potentialBugs.map((bug, index) => (
-                  <Alert key={index} className="bg-white border-red-200">
-                    <AlertDescription className="text-sm text-red-700">• {bug}</AlertDescription>
-                  </Alert>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </>
-      ) : (
-        <div className="bg-gray-50 rounded-lg p-8 text-center">
-          <AlertCircle className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-          <p className="text-sm text-gray-600">AI 분석을 생성하려면 "코드 분석 & 퀴즈 생성하기" 버튼을 클릭하세요</p>
-        </div>
-      )}
-
       {/* File Changes */}
       <Card className="bg-white border-gray-200">
         <CardHeader>
@@ -204,9 +123,7 @@ export function CodeReviewTab({ analysis, files }: CodeReviewTabProps) {
                 </div>
 
                 {/* Diff Content */}
-                <div className="bg-white max-h-96 overflow-auto">
-                  {renderDiffLines(file.patch)}
-                </div>
+                <div className="bg-white max-h-96 overflow-auto">{renderDiffLines(file.patch)}</div>
               </div>
             ))
           ) : (
