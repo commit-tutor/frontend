@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button'
 import { useQuiz } from '@/hooks/useQuiz'
 import { CodeReviewTab } from '@/components/session/CodeReviewTab'
 import { QuizTab } from '@/components/session/QuizTab'
+import { TopicSelector } from '@/components/session/TopicSelector'
 import {
   learningApi,
   repoApi,
   type QuizQuestion,
   type AIAnalysis,
   type CommitDiffInfo,
+  type LearningTopic,
 } from '@/lib/api'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-react'
@@ -38,14 +40,19 @@ function SessionPage() {
     author: string
     date: string
   } | null>(routerState || null)
+  const [topics, setTopics] = useState<LearningTopic[]>([])
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null)
 
   // 로딩 상태
   const [isLoadingFiles, setIsLoadingFiles] = useState(true)
+  const [isLoadingTopics, setIsLoadingTopics] = useState(false)
   const [isGeneratingAI, setIsGeneratingAI] = useState(false) // AI 생성 중
   const [hasGeneratedAI, setHasGeneratedAI] = useState(false) // AI 생성 완료 여부
+  const [hasExtractedTopics, setHasExtractedTopics] = useState(false)
 
   // 에러 상태
   const [filesError, setFilesError] = useState<string | null>(null)
+  const [topicsError, setTopicsError] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
 
   // 퀴즈 로직
@@ -88,7 +95,33 @@ function SessionPage() {
     loadCommitFiles()
   }, [commitSha])
 
-  // 2단계: 사용자가 버튼 클릭 시 AI 생성 (퀴즈 + 리뷰)
+  // 2단계: 주제 추출
+  const handleExtractTopics = async () => {
+    const commitIdentifiers = commitSha.split(',').map((id) => id.trim())
+
+    console.log('🔍 주제 추출 시작')
+
+    try {
+      setIsLoadingTopics(true)
+      setTopicsError(null)
+
+      const topicsData = await learningApi.extractTopics({
+        commitShas: commitIdentifiers,
+      })
+
+      setTopics(topicsData.topics)
+      setHasExtractedTopics(true)
+      console.log('✅ 주제 추출 완료:', topicsData.topics.length, '개')
+    } catch (error) {
+      console.error('❌ 주제 추출 실패:', error)
+      const errorMessage = error instanceof Error ? error.message : '주제 추출 중 오류가 발생했습니다'
+      setTopicsError(errorMessage)
+    } finally {
+      setIsLoadingTopics(false)
+    }
+  }
+
+  // 3단계: 사용자가 주제 선택 후 AI 생성 (퀴즈 + 리뷰)
   const handleGenerateAI = async () => {
     const commitIdentifiers = commitSha.split(',').map((id) => id.trim())
 
@@ -98,10 +131,15 @@ function SessionPage() {
       setIsGeneratingAI(true)
       setAiError(null)
 
+      const selectedTopic = selectedTopicId
+        ? topics.find((t) => t.id === selectedTopicId)?.title
+        : undefined
+
       const sessionData = await learningApi.generateLearningSession({
         commitShas: commitIdentifiers,
         difficulty: 'medium',
         questionCount: 5,
+        selectedTopic,
       })
 
       // 퀴즈 설정
@@ -145,15 +183,46 @@ function SessionPage() {
         </p>
       </div>
 
-      {/* AI 생성 버튼 - 파일 로딩 완료 후 표시 */}
-      {!isLoadingFiles && !hasGeneratedAI && (
+      {/* 1단계: 주제 추출 버튼 - 파일 로딩 완료 후 표시 */}
+      {!isLoadingFiles && !hasExtractedTopics && !hasGeneratedAI && (
         <div className="flex flex-col items-center justify-center py-8 space-y-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300">
           <Sparkles className="h-12 w-12 text-gray-400" />
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">AI 분석 준비 완료</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">학습 주제 추출</h3>
             <p className="text-sm text-gray-600 mb-4">
-              커밋 코드를 분석하여 맞춤형 퀴즈와 리뷰를 생성합니다
+              커밋 코드를 분석하여 학습 가능한 주제를 추출합니다
             </p>
+            <Button
+              onClick={handleExtractTopics}
+              disabled={isLoadingTopics}
+              className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2"
+              size="lg"
+            >
+              {isLoadingTopics ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  주제 추출 중...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  학습 주제 추출하기
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* 2단계: 주제 선택 및 AI 생성 버튼 */}
+      {hasExtractedTopics && !hasGeneratedAI && (
+        <div className="space-y-4">
+          <TopicSelector
+            topics={topics}
+            selectedTopicId={selectedTopicId}
+            onSelectTopic={setSelectedTopicId}
+          />
+          <div className="flex justify-center">
             <Button
               onClick={handleGenerateAI}
               disabled={isGeneratingAI}
@@ -168,7 +237,7 @@ function SessionPage() {
               ) : (
                 <>
                   <Brain className="mr-2 h-4 w-4" />
-                  코드 분석 & 퀴즈 생성하기
+                  {selectedTopicId ? '선택한 주제로 퀴즈 생성' : '전체 주제로 퀴즈 생성'}
                 </>
               )}
             </Button>
@@ -182,6 +251,16 @@ function SessionPage() {
           <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
           <AlertDescription className="text-blue-800">
             AI가 코드를 분석하고 퀴즈를 생성하는 중입니다... (약 10-15초 소요)
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* 주제 추출 에러 */}
+      {topicsError && (
+        <Alert className="border-red-500 bg-red-50">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
+            주제 추출 실패: {topicsError}
           </AlertDescription>
         </Alert>
       )}

@@ -100,10 +100,32 @@ export type QuizQuestion = {
   explanation?: string
 }
 
+export type LearningTopic = {
+  id: string
+  title: string
+  description: string
+  difficulty: string
+  keywords: string[]
+}
+
+export type TopicExtractionRequest = {
+  commitShas: string[]
+}
+
+export type TopicExtractionResponse = {
+  topics: LearningTopic[]
+  metadata?: {
+    totalCommits: number
+    extractedCount: number
+    extractedAt: string
+  }
+}
+
 export type QuizGenerationRequest = {
   commitShas: string[]
   difficulty?: 'easy' | 'medium' | 'hard'
   questionCount?: number
+  selectedTopic?: string
 }
 
 export type QuizGenerationResponse = {
@@ -234,8 +256,18 @@ export const repoApi = {
 // Learning API
 export const learningApi = {
   /**
+   * 커밋에서 학습 가능한 주제 추출
+   * @param request - 주제 추출 요청 (커밋 SHA 목록)
+   * @returns 추출된 학습 주제 목록
+   */
+  extractTopics: async (request: TopicExtractionRequest): Promise<TopicExtractionResponse> => {
+    const response = await apiClient.post<TopicExtractionResponse>('/learning/topics', request)
+    return response.data
+  },
+
+  /**
    * 선택한 커밋들로 퀴즈 생성
-   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수)
+   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수, 선택된 주제)
    */
   generateQuiz: async (request: QuizGenerationRequest): Promise<QuizGenerationResponse> => {
     const response = await apiClient.post<QuizGenerationResponse>('/learning/quiz', request)
@@ -244,7 +276,7 @@ export const learningApi = {
 
   /**
    * 퀴즈와 코드 리뷰를 한 번에 생성 (통합 엔드포인트, 토큰 절약)
-   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수)
+   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수, 선택된 주제)
    * @returns 퀴즈, 리뷰, 커밋 정보를 모두 포함한 객체
    */
   generateLearningSession: async (request: QuizGenerationRequest): Promise<{
