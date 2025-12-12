@@ -66,21 +66,34 @@ function SessionPage() {
       try {
         setIsLoadingFiles(true)
 
-        // GitHub API에서 커밋 상세 정보 가져오기
-        const firstCommitId = commitIdentifiers[0]
-        const [repoIdentifier, sha] = firstCommitId.split(':')
+        // 모든 커밋의 파일 정보 가져오기
+        const allFiles: CommitDiffInfo[] = []
+        let firstCommitInfo = null
 
-        const response = await repoApi.getCommitDetails(repoIdentifier, sha)
+        for (const commitId of commitIdentifiers) {
+          const [repoIdentifier, sha] = commitId.split(':')
+          const response = await repoApi.getCommitDetails(repoIdentifier, sha)
 
-        setCommitFiles(response.files || [])
-        setCommitInfo({
-          sha: response.sha,
-          message: response.message,
-          author: response.author,
-          date: response.date,
-        })
+          // 첫 번째 커밋의 정보를 헤더에 표시
+          if (!firstCommitInfo) {
+            firstCommitInfo = {
+              sha: response.sha,
+              message: response.message,
+              author: response.author,
+              date: response.date,
+            }
+          }
+
+          // 모든 커밋의 파일을 수집
+          if (response.files) {
+            allFiles.push(...response.files)
+          }
+        }
+
+        setCommitFiles(allFiles)
+        setCommitInfo(firstCommitInfo)
         setFilesError(null)
-        console.log('✅ 커밋 파일 정보 로드 완료:', response.files?.length || 0, '개')
+        console.log('✅ 커밋 파일 정보 로드 완료:', allFiles.length, '개 (', commitIdentifiers.length, '개 커밋)')
       } catch (error) {
         console.error('❌ 커밋 파일 로드 실패:', error)
         setFilesError(error instanceof Error ? error.message : '파일 정보를 불러올 수 없습니다')
