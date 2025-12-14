@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
-import { authApi } from '@/lib/api'
+import { useQueryClient } from '@tanstack/react-query'
+import { authApi, repoApi, queryKeys } from '@/lib/api'
 import type { UserResponse } from '@/lib/api'
 
 // 사용자 인터페이스
@@ -41,6 +42,7 @@ interface AuthProviderProps {
 
 // AuthProvider 컴포넌트
 export function AuthProvider({ children }: AuthProviderProps) {
+  const queryClient = useQueryClient()
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -91,7 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           email: response.email,
           avatarUrl: response.avatar_url,
           needsOnboarding: response.needs_onboarding,
-        })
+        }),
       )
 
       // state 업데이트
@@ -101,6 +103,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         email: response.email,
         avatarUrl: response.avatar_url,
         needsOnboarding: response.needs_onboarding,
+      })
+
+      // 저장소 목록을 백그라운드에서 미리 가져와 캐시에 저장
+      // 사용자가 Dashboard로 이동했을 때 즉시 표시되도록
+      queryClient.prefetchQuery({
+        queryKey: queryKeys.repositories,
+        queryFn: repoApi.getRepositories,
+        staleTime: 10 * 60 * 1000, // 10분 동안 유효
       })
 
       return response.needs_onboarding
@@ -126,6 +136,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // state 초기화
     setUser(null)
     setProfile(null)
+
+    // TanStack Query 캐시 초기화
+    queryClient.clear()
 
     // 홈으로 리다이렉트
     window.location.href = '/'

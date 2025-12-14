@@ -11,7 +11,7 @@ import { RepositoryList } from '@/components/dashboard/RepositoryList'
 function DashboardPage() {
   const navigate = useNavigate()
 
-  // 커스텀 훅으로 데이터 페칭 로직 분리
+  // 커스텀 훅으로 데이터 페칭 로직 분리 (TanStack Query 기반 - 자동 캐싱)
   const { repositories, isLoading, error, refresh } = useRepositories()
 
   // 검색 로직 분리
@@ -22,13 +22,18 @@ function DashboardPage() {
     navigate({ to: `/repo/${repoId}/commits` })
   }
 
+  const handleRefresh = async () => {
+    await refresh()
+  }
+
   return (
     <div className="flex flex-col space-y-6">
       <DashboardHeader
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         isLoading={isLoading}
-        onRefresh={refresh}
+        onRefresh={handleRefresh}
+        repositoryCount={repositories.length}
       />
 
       <RepositoryList

@@ -279,13 +279,23 @@ export const learningApi = {
    * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수, 선택된 주제)
    * @returns 퀴즈와 커밋 정보
    */
-  generateLearningSession: async (request: QuizGenerationRequest): Promise<{
+  generateLearningSession: async (
+    request: QuizGenerationRequest,
+  ): Promise<{
     quiz: QuizGenerationResponse
     commitInfo: CommitDetailResponse
   }> => {
     const response = await apiClient.post('/learning/session', request)
     return response.data
   },
+}
+
+// Query Keys - TanStack Query 캐시 키 상수
+export const queryKeys = {
+  repositories: ['repositories'] as const,
+  commits: (repoId: string | number, branch: string) => ['commits', repoId, branch] as const,
+  branches: (repoId: string | number) => ['branches', repoId] as const,
+  commitDetails: (repoId: string | number, sha: string) => ['commitDetails', repoId, sha] as const,
 }
 
 export default apiClient
