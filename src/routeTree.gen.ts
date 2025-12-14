@@ -16,7 +16,9 @@ import { Route as Dashboard_mockRouteImport } from './routes/dashboard_mock'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as R404RouteImport } from './routes/$404'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ReviewsIndexRouteImport } from './routes/reviews/index'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
+import { Route as ReviewsReviewIdRouteImport } from './routes/reviews/$reviewId'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as SessionCommitShaIndexRouteImport } from './routes/session/$commitSha/index'
 import { Route as RepoRepoIdIndexRouteImport } from './routes/repo/$repoId/index'
@@ -61,9 +63,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewsIndexRoute = ReviewsIndexRouteImport.update({
+  id: '/reviews/',
+  path: '/reviews/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsProfileRoute = SettingsProfileRouteImport.update({
   id: '/settings/profile',
   path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewsReviewIdRoute = ReviewsReviewIdRouteImport.update({
+  id: '/reviews/$reviewId',
+  path: '/reviews/$reviewId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
@@ -116,7 +128,9 @@ export interface FileRoutesByFullPath {
   '/my-quizzes': typeof MyQuizzesRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/reviews/$reviewId': typeof ReviewsReviewIdRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/reviews': typeof ReviewsIndexRoute
   '/quiz/$quizId/result': typeof QuizQuizIdResultRoute
   '/repo/$repoId/commits': typeof RepoRepoIdCommitsRoute
   '/repo/$repoId/commits_mock': typeof RepoRepoIdCommits_mockRoute
@@ -134,7 +148,9 @@ export interface FileRoutesByTo {
   '/my-quizzes': typeof MyQuizzesRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/reviews/$reviewId': typeof ReviewsReviewIdRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/reviews': typeof ReviewsIndexRoute
   '/quiz/$quizId/result': typeof QuizQuizIdResultRoute
   '/repo/$repoId/commits': typeof RepoRepoIdCommitsRoute
   '/repo/$repoId/commits_mock': typeof RepoRepoIdCommits_mockRoute
@@ -153,7 +169,9 @@ export interface FileRoutesById {
   '/my-quizzes': typeof MyQuizzesRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/reviews/$reviewId': typeof ReviewsReviewIdRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/reviews/': typeof ReviewsIndexRoute
   '/quiz/$quizId/result': typeof QuizQuizIdResultRoute
   '/repo/$repoId/commits': typeof RepoRepoIdCommitsRoute
   '/repo/$repoId/commits_mock': typeof RepoRepoIdCommits_mockRoute
@@ -173,7 +191,9 @@ export interface FileRouteTypes {
     | '/my-quizzes'
     | '/statistics'
     | '/auth/callback'
+    | '/reviews/$reviewId'
     | '/settings/profile'
+    | '/reviews'
     | '/quiz/$quizId/result'
     | '/repo/$repoId/commits'
     | '/repo/$repoId/commits_mock'
@@ -191,7 +211,9 @@ export interface FileRouteTypes {
     | '/my-quizzes'
     | '/statistics'
     | '/auth/callback'
+    | '/reviews/$reviewId'
     | '/settings/profile'
+    | '/reviews'
     | '/quiz/$quizId/result'
     | '/repo/$repoId/commits'
     | '/repo/$repoId/commits_mock'
@@ -209,7 +231,9 @@ export interface FileRouteTypes {
     | '/my-quizzes'
     | '/statistics'
     | '/auth/callback'
+    | '/reviews/$reviewId'
     | '/settings/profile'
+    | '/reviews/'
     | '/quiz/$quizId/result'
     | '/repo/$repoId/commits'
     | '/repo/$repoId/commits_mock'
@@ -228,7 +252,9 @@ export interface RootRouteChildren {
   MyQuizzesRoute: typeof MyQuizzesRoute
   StatisticsRoute: typeof StatisticsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  ReviewsReviewIdRoute: typeof ReviewsReviewIdRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
+  ReviewsIndexRoute: typeof ReviewsIndexRoute
   QuizQuizIdResultRoute: typeof QuizQuizIdResultRoute
   RepoRepoIdCommitsRoute: typeof RepoRepoIdCommitsRoute
   RepoRepoIdCommits_mockRoute: typeof RepoRepoIdCommits_mockRoute
@@ -289,11 +315,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reviews/': {
+      id: '/reviews/'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/profile': {
       id: '/settings/profile'
       path: '/settings/profile'
       fullPath: '/settings/profile'
       preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reviews/$reviewId': {
+      id: '/reviews/$reviewId'
+      path: '/reviews/$reviewId'
+      fullPath: '/reviews/$reviewId'
+      preLoaderRoute: typeof ReviewsReviewIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/callback': {
@@ -364,7 +404,9 @@ const rootRouteChildren: RootRouteChildren = {
   MyQuizzesRoute: MyQuizzesRoute,
   StatisticsRoute: StatisticsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  ReviewsReviewIdRoute: ReviewsReviewIdRoute,
   SettingsProfileRoute: SettingsProfileRoute,
+  ReviewsIndexRoute: ReviewsIndexRoute,
   QuizQuizIdResultRoute: QuizQuizIdResultRoute,
   RepoRepoIdCommitsRoute: RepoRepoIdCommitsRoute,
   RepoRepoIdCommits_mockRoute: RepoRepoIdCommits_mockRoute,

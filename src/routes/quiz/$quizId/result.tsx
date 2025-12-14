@@ -5,8 +5,17 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle, XCircle, Trophy, Brain, Home, RotateCcw } from 'lucide-react'
-import { type QuizSubmitResponse, type MyQuizResponse } from '@/lib/api'
+import {
+  CheckCircle,
+  XCircle,
+  Trophy,
+  Brain,
+  Home,
+  RotateCcw,
+  Sparkles,
+  Loader2,
+} from 'lucide-react'
+import { type QuizSubmitResponse, type MyQuizResponse, reviewApi } from '@/lib/api'
 
 /**
  * 퀴즈 결과 페이지
@@ -25,6 +34,29 @@ function QuizResultPage() {
   // State가 없으면 API로 다시 조회 (새로고침 대응)
   const [quiz, setQuiz] = React.useState<MyQuizResponse | null>(stateQuiz || null)
   const [isLoading, setIsLoading] = React.useState(!stateQuiz)
+  const [isGeneratingReview, setIsGeneratingReview] = React.useState(false)
+
+  // 분석하기 버튼 핸들러
+  const handleGenerateReview = async () => {
+    if (!quiz || isGeneratingReview) return
+
+    try {
+      setIsGeneratingReview(true)
+      console.log('🔍 복습 자료 생성 시작...')
+
+      const review = await reviewApi.generateReview(quiz.id)
+
+      console.log('✅ 복습 자료 생성 완료:', review.title)
+
+      // 복습 자료 상세 페이지로 이동
+      navigate({ to: '/reviews/$reviewId', params: { reviewId: review.id.toString() } })
+    } catch (error: any) {
+      console.error('❌ 복습 자료 생성 실패:', error)
+      alert(error.response?.data?.detail || '복습 자료 생성에 실패했습니다. 다시 시도해주세요.')
+    } finally {
+      setIsGeneratingReview(false)
+    }
+  }
 
   React.useEffect(() => {
     if (!stateQuiz) {
@@ -161,6 +193,28 @@ function QuizResultPage() {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* 분석하기 버튼 */}
+          <div className="mb-4">
+            <Button
+              onClick={handleGenerateReview}
+              disabled={isGeneratingReview}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+              size="lg"
+            >
+              {isGeneratingReview ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  AI 복습 자료 생성 중...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  AI 분석하기 - 맞춤 복습 자료 생성
+                </>
+              )}
+            </Button>
           </div>
 
           {/* 액션 버튼 */}

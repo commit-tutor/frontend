@@ -386,6 +386,70 @@ export const myQuizApi = {
   },
 }
 
+/**
+ * 복습 자료 API
+ */
+export const reviewApi = {
+  /**
+   * 복습 자료 생성
+   */
+  generateReview: async (quizId: number): Promise<ReviewResponse> => {
+    const response = await apiClient.post<ReviewResponse>('/review/generate', { quiz_id: quizId })
+    return response.data
+  },
+
+  /**
+   * 나의 복습 자료 목록 조회
+   */
+  getMyReviews: async (): Promise<ReviewListResponse> => {
+    const response = await apiClient.get<ReviewListResponse>('/review')
+    return response.data
+  },
+
+  /**
+   * 복습 자료 상세 조회
+   */
+  getReviewById: async (reviewId: number): Promise<ReviewResponse> => {
+    const response = await apiClient.get<ReviewResponse>(`/review/${reviewId}`)
+    return response.data
+  },
+
+  /**
+   * 복습 자료 삭제
+   */
+  deleteReview: async (reviewId: number): Promise<void> => {
+    await apiClient.delete(`/review/${reviewId}`)
+  },
+}
+
+// 복습 자료 API Types
+export type ReviewSection = {
+  title: string
+  content: string
+  key_points: string[]
+  examples?: string[]
+}
+
+export type ReviewResponse = {
+  id: number
+  user_id: number
+  quiz_id: number
+  title: string
+  summary: string
+  sections: ReviewSection[]
+  related_concepts?: string[]
+  further_reading?: string[]
+  created_at: string
+  updated_at?: string
+  quiz_title?: string
+  quiz_score?: number
+}
+
+export type ReviewListResponse = {
+  reviews: ReviewResponse[]
+  total: number
+}
+
 // Query Keys - TanStack Query 캐시 키 상수
 export const queryKeys = {
   repositories: ['repositories'] as const,
@@ -394,6 +458,8 @@ export const queryKeys = {
   commitDetails: (repoId: string | number, sha: string) => ['commitDetails', repoId, sha] as const,
   myQuizzes: (isCompleted?: boolean) => ['myQuizzes', isCompleted] as const,
   myQuiz: (quizId: number) => ['myQuiz', quizId] as const,
+  reviews: ['reviews'] as const,
+  review: (reviewId: number) => ['review', reviewId] as const,
 }
 
 export default apiClient
