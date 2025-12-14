@@ -154,13 +154,6 @@ function QuizPlayPage() {
 
       {/* 탭 (퀴즈만) */}
       <Tabs defaultValue="quiz" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 mb-6">
-          <TabsTrigger value="quiz" className="flex items-center gap-2">
-            <Brain className="h-4 w-4" />
-            퀴즈 ({quizQuestions.length}문제)
-          </TabsTrigger>
-        </TabsList>
-
         <TabsContent value="quiz">
           <QuizTab
             questions={quizQuestions}
