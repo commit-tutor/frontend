@@ -10,7 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StatisticsRouteImport } from './routes/statistics'
-import { Route as LearningHistoryRouteImport } from './routes/learning-history'
+import { Route as MyQuizzesRouteImport } from './routes/my-quizzes'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as Dashboard_mockRouteImport } from './routes/dashboard_mock'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -20,18 +20,20 @@ import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as SessionCommitShaIndexRouteImport } from './routes/session/$commitSha/index'
 import { Route as RepoRepoIdIndexRouteImport } from './routes/repo/$repoId/index'
+import { Route as QuizQuizIdIndexRouteImport } from './routes/quiz/$quizId/index'
 import { Route as SessionCommitShaResultRouteImport } from './routes/session/$commitSha/result'
 import { Route as RepoRepoIdCommits_mockRouteImport } from './routes/repo/$repoId/commits_mock'
 import { Route as RepoRepoIdCommitsRouteImport } from './routes/repo/$repoId/commits'
+import { Route as QuizQuizIdResultRouteImport } from './routes/quiz/$quizId/result'
 
 const StatisticsRoute = StatisticsRouteImport.update({
   id: '/statistics',
   path: '/statistics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LearningHistoryRoute = LearningHistoryRouteImport.update({
-  id: '/learning-history',
-  path: '/learning-history',
+const MyQuizzesRoute = MyQuizzesRouteImport.update({
+  id: '/my-quizzes',
+  path: '/my-quizzes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -79,6 +81,11 @@ const RepoRepoIdIndexRoute = RepoRepoIdIndexRouteImport.update({
   path: '/repo/$repoId/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuizQuizIdIndexRoute = QuizQuizIdIndexRouteImport.update({
+  id: '/quiz/$quizId/',
+  path: '/quiz/$quizId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SessionCommitShaResultRoute = SessionCommitShaResultRouteImport.update({
   id: '/session/$commitSha/result',
   path: '/session/$commitSha/result',
@@ -94,6 +101,11 @@ const RepoRepoIdCommitsRoute = RepoRepoIdCommitsRouteImport.update({
   path: '/repo/$repoId/commits',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuizQuizIdResultRoute = QuizQuizIdResultRouteImport.update({
+  id: '/quiz/$quizId/result',
+  path: '/quiz/$quizId/result',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,13 +113,15 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
-  '/learning-history': typeof LearningHistoryRoute
+  '/my-quizzes': typeof MyQuizzesRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/quiz/$quizId/result': typeof QuizQuizIdResultRoute
   '/repo/$repoId/commits': typeof RepoRepoIdCommitsRoute
   '/repo/$repoId/commits_mock': typeof RepoRepoIdCommits_mockRoute
   '/session/$commitSha/result': typeof SessionCommitShaResultRoute
+  '/quiz/$quizId': typeof QuizQuizIdIndexRoute
   '/repo/$repoId': typeof RepoRepoIdIndexRoute
   '/session/$commitSha': typeof SessionCommitShaIndexRoute
 }
@@ -117,13 +131,15 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
-  '/learning-history': typeof LearningHistoryRoute
+  '/my-quizzes': typeof MyQuizzesRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/quiz/$quizId/result': typeof QuizQuizIdResultRoute
   '/repo/$repoId/commits': typeof RepoRepoIdCommitsRoute
   '/repo/$repoId/commits_mock': typeof RepoRepoIdCommits_mockRoute
   '/session/$commitSha/result': typeof SessionCommitShaResultRoute
+  '/quiz/$quizId': typeof QuizQuizIdIndexRoute
   '/repo/$repoId': typeof RepoRepoIdIndexRoute
   '/session/$commitSha': typeof SessionCommitShaIndexRoute
 }
@@ -134,13 +150,15 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
-  '/learning-history': typeof LearningHistoryRoute
+  '/my-quizzes': typeof MyQuizzesRoute
   '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/settings/profile': typeof SettingsProfileRoute
+  '/quiz/$quizId/result': typeof QuizQuizIdResultRoute
   '/repo/$repoId/commits': typeof RepoRepoIdCommitsRoute
   '/repo/$repoId/commits_mock': typeof RepoRepoIdCommits_mockRoute
   '/session/$commitSha/result': typeof SessionCommitShaResultRoute
+  '/quiz/$quizId/': typeof QuizQuizIdIndexRoute
   '/repo/$repoId/': typeof RepoRepoIdIndexRoute
   '/session/$commitSha/': typeof SessionCommitShaIndexRoute
 }
@@ -152,13 +170,15 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard_mock'
     | '/home'
-    | '/learning-history'
+    | '/my-quizzes'
     | '/statistics'
     | '/auth/callback'
     | '/settings/profile'
+    | '/quiz/$quizId/result'
     | '/repo/$repoId/commits'
     | '/repo/$repoId/commits_mock'
     | '/session/$commitSha/result'
+    | '/quiz/$quizId'
     | '/repo/$repoId'
     | '/session/$commitSha'
   fileRoutesByTo: FileRoutesByTo
@@ -168,13 +188,15 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard_mock'
     | '/home'
-    | '/learning-history'
+    | '/my-quizzes'
     | '/statistics'
     | '/auth/callback'
     | '/settings/profile'
+    | '/quiz/$quizId/result'
     | '/repo/$repoId/commits'
     | '/repo/$repoId/commits_mock'
     | '/session/$commitSha/result'
+    | '/quiz/$quizId'
     | '/repo/$repoId'
     | '/session/$commitSha'
   id:
@@ -184,13 +206,15 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dashboard_mock'
     | '/home'
-    | '/learning-history'
+    | '/my-quizzes'
     | '/statistics'
     | '/auth/callback'
     | '/settings/profile'
+    | '/quiz/$quizId/result'
     | '/repo/$repoId/commits'
     | '/repo/$repoId/commits_mock'
     | '/session/$commitSha/result'
+    | '/quiz/$quizId/'
     | '/repo/$repoId/'
     | '/session/$commitSha/'
   fileRoutesById: FileRoutesById
@@ -201,13 +225,15 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   Dashboard_mockRoute: typeof Dashboard_mockRoute
   HomeRoute: typeof HomeRoute
-  LearningHistoryRoute: typeof LearningHistoryRoute
+  MyQuizzesRoute: typeof MyQuizzesRoute
   StatisticsRoute: typeof StatisticsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
+  QuizQuizIdResultRoute: typeof QuizQuizIdResultRoute
   RepoRepoIdCommitsRoute: typeof RepoRepoIdCommitsRoute
   RepoRepoIdCommits_mockRoute: typeof RepoRepoIdCommits_mockRoute
   SessionCommitShaResultRoute: typeof SessionCommitShaResultRoute
+  QuizQuizIdIndexRoute: typeof QuizQuizIdIndexRoute
   RepoRepoIdIndexRoute: typeof RepoRepoIdIndexRoute
   SessionCommitShaIndexRoute: typeof SessionCommitShaIndexRoute
 }
@@ -221,11 +247,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StatisticsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/learning-history': {
-      id: '/learning-history'
-      path: '/learning-history'
-      fullPath: '/learning-history'
-      preLoaderRoute: typeof LearningHistoryRouteImport
+    '/my-quizzes': {
+      id: '/my-quizzes'
+      path: '/my-quizzes'
+      fullPath: '/my-quizzes'
+      preLoaderRoute: typeof MyQuizzesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -291,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RepoRepoIdIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quiz/$quizId/': {
+      id: '/quiz/$quizId/'
+      path: '/quiz/$quizId'
+      fullPath: '/quiz/$quizId'
+      preLoaderRoute: typeof QuizQuizIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/session/$commitSha/result': {
       id: '/session/$commitSha/result'
       path: '/session/$commitSha/result'
@@ -312,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RepoRepoIdCommitsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quiz/$quizId/result': {
+      id: '/quiz/$quizId/result'
+      path: '/quiz/$quizId/result'
+      fullPath: '/quiz/$quizId/result'
+      preLoaderRoute: typeof QuizQuizIdResultRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -321,13 +361,15 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   Dashboard_mockRoute: Dashboard_mockRoute,
   HomeRoute: HomeRoute,
-  LearningHistoryRoute: LearningHistoryRoute,
+  MyQuizzesRoute: MyQuizzesRoute,
   StatisticsRoute: StatisticsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   SettingsProfileRoute: SettingsProfileRoute,
+  QuizQuizIdResultRoute: QuizQuizIdResultRoute,
   RepoRepoIdCommitsRoute: RepoRepoIdCommitsRoute,
   RepoRepoIdCommits_mockRoute: RepoRepoIdCommits_mockRoute,
   SessionCommitShaResultRoute: SessionCommitShaResultRoute,
+  QuizQuizIdIndexRoute: QuizQuizIdIndexRoute,
   RepoRepoIdIndexRoute: RepoRepoIdIndexRoute,
   SessionCommitShaIndexRoute: SessionCommitShaIndexRoute,
 }

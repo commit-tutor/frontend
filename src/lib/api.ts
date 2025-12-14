@@ -287,12 +287,113 @@ export const learningApi = {
   },
 }
 
+// 나의 퀴즈 API Types
+export type QuizSaveRequest = {
+  title: string
+  description?: string
+  commit_shas: string[]
+  repository_info?: Record<string, any>
+  question_count: number
+  selected_topic?: string
+  questions: QuizQuestion[]
+}
+
+export type QuizSubmitRequest = {
+  user_answers: Record<string, any>
+  duration_seconds?: number | null
+}
+
+export type MyQuizResponse = {
+  id: number
+  title: string
+  description?: string
+  commit_shas: string[]
+  repository_info?: Record<string, any>
+  question_count: number
+  selected_topic?: string
+  questions: QuizQuestion[]
+  is_completed: boolean
+  completed_at?: string
+  score?: number
+  correct_answers?: number
+  wrong_answers?: number
+  duration_seconds?: number
+  created_at: string
+  updated_at?: string
+}
+
+export type QuizListResponse = {
+  quizzes: MyQuizResponse[]
+  total: number
+  completed: number
+  pending: number
+}
+
+export type QuizSubmitResponse = {
+  quiz_id: number
+  score: number
+  correct_answers: number
+  wrong_answers: number
+  is_passed: boolean
+  feedback?: string
+}
+
+/**
+ * 나의 퀴즈 API
+ */
+export const myQuizApi = {
+  /**
+   * 퀴즈 저장
+   */
+  saveQuiz: async (request: QuizSaveRequest): Promise<MyQuizResponse> => {
+    const response = await apiClient.post<MyQuizResponse>('/my-quiz', request)
+    return response.data
+  },
+
+  /**
+   * 나의 퀴즈 목록 조회
+   */
+  getMyQuizzes: async (params?: {
+    is_completed?: boolean
+    limit?: number
+    offset?: number
+  }): Promise<QuizListResponse> => {
+    const response = await apiClient.get<QuizListResponse>('/my-quiz', { params })
+    return response.data
+  },
+
+  /**
+   * 특정 퀴즈 조회
+   */
+  getQuizById: async (quizId: number): Promise<MyQuizResponse> => {
+    const response = await apiClient.get<MyQuizResponse>(`/my-quiz/${quizId}`)
+    return response.data
+  },
+
+  /**
+   * 퀴즈 제출
+   */
+  submitQuiz: async (quizId: number, request: QuizSubmitRequest): Promise<QuizSubmitResponse> => {
+    const response = await apiClient.post<QuizSubmitResponse>(`/my-quiz/${quizId}/submit`, request)
+    return response.data
+  },
+
+  /**
+   * 퀴즈 삭제
+   */
+  deleteQuiz: async (quizId: number): Promise<void> => {
+    await apiClient.delete(`/my-quiz/${quizId}`)
+  },
+}
+
 // Query Keys - TanStack Query 캐시 키 상수
 export const queryKeys = {
   repositories: ['repositories'] as const,
   commits: (repoId: string | number, branch: string) => ['commits', repoId, branch] as const,
   branches: (repoId: string | number) => ['branches', repoId] as const,
   commitDetails: (repoId: string | number, sha: string) => ['commitDetails', repoId, sha] as const,
+  myQuizzes: (isCompleted?: boolean) => ['myQuizzes', isCompleted] as const,
+  myQuiz: (quizId: number) => ['myQuiz', quizId] as const,
 }
 
 export default apiClient

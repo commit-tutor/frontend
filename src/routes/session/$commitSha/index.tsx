@@ -1,25 +1,16 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Code2, Brain, Loader2, Sparkles } from 'lucide-react'
+import { Code2, Loader2, Sparkles, Brain, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useQuiz } from '@/hooks/useQuiz'
 import { CodeReviewTab } from '@/components/session/CodeReviewTab'
-import { QuizTab } from '@/components/session/QuizTab'
 import { TopicSelector } from '@/components/session/TopicSelector'
-import {
-  learningApi,
-  repoApi,
-  type QuizQuestion,
-  type CommitDiffInfo,
-  type LearningTopic,
-} from '@/lib/api'
+import { learningApi, repoApi, type CommitDiffInfo, type LearningTopic } from '@/lib/api'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle } from 'lucide-react'
 
 /**
- * 학습 세션 페이지 - 코드 분석 & 퀴즈
- * 플로우: 1) 커밋 파일 로드 → 2) 주제 추출 → 3) 주제 선택 → 4) 퀴즈 생성 & 학습
+ * 학습 세션 페이지 - 코드 분석 & 퀴즈 생성
+ * 플로우: 1) 커밋 파일 로드 → 2) 주제 추출 → 3) 주제 선택 → 4) 퀴즈 생성 → 5) 퀴즈 풀기 페이지로 이동
  */
 function SessionPage() {
   const navigate = useNavigate()
@@ -30,7 +21,6 @@ function SessionPage() {
   const routerState = (window.history.state as any)?.usr?.commitInfo
 
   // 데이터 상태
-  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([])
   const [commitFiles, setCommitFiles] = useState<CommitDiffInfo[]>([])
   const [commitInfo, setCommitInfo] = useState<{
     sha: string
@@ -45,16 +35,12 @@ function SessionPage() {
   const [isLoadingFiles, setIsLoadingFiles] = useState(true)
   const [isLoadingTopics, setIsLoadingTopics] = useState(false)
   const [isGeneratingAI, setIsGeneratingAI] = useState(false)
-  const [hasGeneratedAI, setHasGeneratedAI] = useState(false)
   const [hasExtractedTopics, setHasExtractedTopics] = useState(false)
 
   // 에러 상태
   const [filesError, setFilesError] = useState<string | null>(null)
   const [topicsError, setTopicsError] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
-
-  // 퀴즈 로직
-  const quiz = useQuiz(quizQuestions)
 
   // 1단계: 페이지 진입 시 커밋 파일(diff) 정보 먼저 로드
   useEffect(() => {
@@ -159,14 +145,46 @@ function SessionPage() {
         selectedTopic,
       })
 
-      // 퀴즈 설정
-      setQuizQuestions(sessionData.quiz.questions)
       console.log('✅ 퀴즈 생성 완료:', sessionData.quiz.questions.length, '개')
 
-      setHasGeneratedAI(true)
+      // 퀴즈를 DB에 저장
+      try {
+        const { myQuizApi } = await import('@/lib/api')
 
-      // 퀴즈 탭으로 자동 전환
-      setActiveTab('quiz')
+        // 저장소 정보 추출 (첫 번째 커밋에서)
+        const firstCommitId = commitIdentifiers[0]
+        let repositoryInfo = undefined
+        if (firstCommitId.includes(':')) {
+          const [repoPart] = firstCommitId.split(':')
+          if (repoPart.includes('/')) {
+            const [owner, repo] = repoPart.split('/')
+            repositoryInfo = { owner, repo, full_name: `${owner}/${repo}` }
+          }
+        }
+
+        const savedQuiz = await myQuizApi.saveQuiz({
+          title: selectedTopic ? `${selectedTopic} 학습` : `커밋 분석 퀴즈 (${commitCount}개 커밋)`,
+          description: sessionData.commitInfo ? `${sessionData.commitInfo.message}` : undefined,
+          commit_shas: commitIdentifiers,
+          repository_info: repositoryInfo,
+          question_count: sessionData.quiz.questions.length,
+          selected_topic: selectedTopic,
+          questions: sessionData.quiz.questions,
+        })
+
+        console.log('💾 퀴즈 DB 저장 완료:', savedQuiz.id)
+        console.log('🔀 퀴즈 풀기 페이지로 이동합니다...')
+
+        // 퀴즈 풀기 페이지로 바로 이동
+        navigate({
+          to: '/quiz/$quizId',
+          params: { quizId: savedQuiz.id.toString() },
+        })
+      } catch (saveError) {
+        console.error('❌ 퀴즈 저장 실패:', saveError)
+        // 저장 실패 시 에러 표시하고 중단
+        setAiError('퀴즈 저장에 실패했습니다. 다시 시도해주세요.')
+      }
     } catch (error) {
       console.error('❌ 퀴즈 생성 실패:', error)
       const errorMessage =
@@ -175,10 +193,6 @@ function SessionPage() {
     } finally {
       setIsGeneratingAI(false)
     }
-  }
-
-  const handleSubmitQuiz = () => {
-    navigate({ to: `/session/${commitSha}/result` })
   }
 
   const commitCount = commitSha.split(',').length
@@ -199,8 +213,8 @@ function SessionPage() {
         </p>
       </div>
 
-      {/* 주제 추출 버튼 - 파일 로딩 완료 후 & 주제 미추출 & 퀴즈 미생성 시 */}
-      {!isLoadingFiles && !hasExtractedTopics && !hasGeneratedAI && (
+      {/* 주제 추출 버튼 - 파일 로딩 완료 후 & 주제 미추출 시 */}
+      {!isLoadingFiles && !hasExtractedTopics && (
         <div className="flex flex-col items-center justify-center py-8 space-y-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300">
           <Sparkles className="h-12 w-12 text-gray-400" />
           <div className="text-center">
@@ -231,7 +245,7 @@ function SessionPage() {
       )}
 
       {/* 주제 선택 및 퀴즈 생성 버튼 */}
-      {hasExtractedTopics && !hasGeneratedAI && (
+      {hasExtractedTopics && (
         <div className="space-y-4">
           <TopicSelector
             topics={topics}
@@ -289,65 +303,19 @@ function SessionPage() {
         </Alert>
       )}
 
-      {/* Tabs - 파일 로딩 완료 후 표시 */}
+      {/* 코드 변경사항 - 파일 로딩 완료 후 표시 */}
       {!isLoadingFiles && (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="review" className="flex items-center gap-2">
-              <Code2 className="h-4 w-4" />
-              코드 변경사항
-            </TabsTrigger>
-            <TabsTrigger
-              value="quiz"
-              className="flex items-center gap-2"
-              disabled={!hasGeneratedAI}
-            >
-              <Brain className="h-4 w-4" />
-              퀴즈
-              {!hasGeneratedAI && <span className="text-xs">(생성 필요)</span>}
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Code Review Tab - diff는 항상 표시 (AI 리뷰 없음) */}
-          <TabsContent value="review" className="mt-4">
-            {filesError && (
-              <Alert className="mb-4 border-red-500 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  파일 변경사항 로딩 실패: {filesError}
-                </AlertDescription>
-              </Alert>
-            )}
-            <CodeReviewTab analysis={null} files={commitFiles} />
-          </TabsContent>
-
-          {/* Quiz Tab - 퀴즈 생성 후 표시 */}
-          <TabsContent value="quiz" className="mt-4">
-            {hasGeneratedAI && quizQuestions.length > 0 ? (
-              <QuizTab
-                questions={quizQuestions}
-                currentQuestionIndex={quiz.currentQuestionIndex}
-                currentQuestion={quiz.currentQuestion}
-                totalQuestions={quiz.totalQuestions}
-                isLastQuestion={quiz.isLastQuestion}
-                isFirstQuestion={quiz.isFirstQuestion}
-                quizAnswers={quiz.quizAnswers}
-                answeredCount={quiz.answeredCount}
-                hasAnsweredCurrentQuestion={quiz.hasAnsweredCurrentQuestion}
-                submittedAnswers={quiz.submittedAnswers}
-                hasSubmittedCurrentQuestion={quiz.hasSubmittedCurrentQuestion}
-                onAnswer={quiz.handleAnswer}
-                onSubmitAnswer={quiz.handleSubmitAnswer}
-                onNext={quiz.handleNext}
-                onPrevious={quiz.handlePrevious}
-                onSubmit={handleSubmitQuiz}
-                goToQuestion={quiz.goToQuestion}
-              />
-            ) : (
-              <div className="text-center py-12 text-gray-600">퀴즈를 먼저 생성해주세요</div>
-            )}
-          </TabsContent>
-        </Tabs>
+        <div className="mt-4">
+          {filesError && (
+            <Alert className="mb-4 border-red-500 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                파일 변경사항 로딩 실패: {filesError}
+              </AlertDescription>
+            </Alert>
+          )}
+          <CodeReviewTab analysis={null} files={commitFiles} />
+        </div>
       )}
 
       {/* 파일 로딩 중 */}

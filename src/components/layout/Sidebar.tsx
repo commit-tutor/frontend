@@ -1,14 +1,7 @@
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useAuth } from '@/contexts/AuthContext'
 import { Separator } from '@/components/ui/separator'
-import {
-  Home,
-  FolderGit2,
-  BookOpen,
-  Settings,
-  TrendingUp,
-  Code2,
-} from 'lucide-react'
+import { Home, FolderGit2, BookOpen, Settings, TrendingUp, Code2 } from 'lucide-react'
 
 const NAV_ITEMS = [
   {
@@ -24,10 +17,10 @@ const NAV_ITEMS = [
     description: 'GitHub 저장소',
   },
   {
-    title: '학습 기록',
+    title: '나의 퀴즈',
     icon: BookOpen,
-    path: '/learning-history',
-    description: '학습 히스토리',
+    path: '/my-quizzes',
+    description: '퀴즈 목록 및 기록',
   },
   {
     title: '통계',
@@ -80,17 +73,13 @@ export function Sidebar() {
               key={item.path}
               onClick={() => navigate({ to: item.path })}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                active
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
+                active ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
               <Icon className="h-5 w-5" />
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium">{item.title}</p>
-                <p
-                  className={`text-xs ${active ? 'text-gray-300' : 'text-gray-500'}`}
-                >
+                <p className={`text-xs ${active ? 'text-gray-300' : 'text-gray-500'}`}>
                   {item.description}
                 </p>
               </div>
@@ -112,17 +101,13 @@ export function Sidebar() {
               key={item.path}
               onClick={() => navigate({ to: item.path })}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                active
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
+                active ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
               <Icon className="h-5 w-5" />
               <div className="flex-1 text-left">
                 <p className="text-sm font-medium">{item.title}</p>
-                <p
-                  className={`text-xs ${active ? 'text-gray-300' : 'text-gray-500'}`}
-                >
+                <p className={`text-xs ${active ? 'text-gray-300' : 'text-gray-500'}`}>
                   {item.description}
                 </p>
               </div>
