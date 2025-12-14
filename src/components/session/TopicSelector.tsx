@@ -1,19 +1,12 @@
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Check, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { type LearningTopic } from '@/lib/api'
 
 type TopicSelectorProps = {
   topics: LearningTopic[]
   selectedTopicId: string | null
   onSelectTopic: (topicId: string | null) => void
-}
-
-const difficultyColors = {
-  easy: 'bg-green-100 text-green-800 border-green-300',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  hard: 'bg-red-100 text-red-800 border-red-300',
 }
 
 export function TopicSelector({ topics, selectedTopicId, onSelectTopic }: TopicSelectorProps) {
@@ -44,9 +37,6 @@ export function TopicSelector({ topics, selectedTopicId, onSelectTopic }: TopicS
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {topics.map((topic) => {
           const isSelected = selectedTopicId === topic.id
-          const difficultyColor =
-            difficultyColors[topic.difficulty as keyof typeof difficultyColors] ||
-            difficultyColors.medium
 
           return (
             <Card
@@ -58,12 +48,7 @@ export function TopicSelector({ topics, selectedTopicId, onSelectTopic }: TopicS
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-semibold text-gray-900 text-sm">{topic.title}</h4>
-                    <Badge variant="outline" className={`text-xs ${difficultyColor}`}>
-                      {topic.difficulty}
-                    </Badge>
-                  </div>
+                  <h4 className="font-semibold text-gray-900 text-sm mb-2">{topic.title}</h4>
                   <p className="text-xs text-gray-600 mb-3 line-clamp-2">{topic.description}</p>
                   <div className="flex flex-wrap gap-1">
                     {topic.keywords.slice(0, 4).map((keyword) => (

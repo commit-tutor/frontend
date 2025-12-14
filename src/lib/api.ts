@@ -104,7 +104,6 @@ export type LearningTopic = {
   id: string
   title: string
   description: string
-  difficulty: string
   keywords: string[]
 }
 
@@ -123,7 +122,6 @@ export type TopicExtractionResponse = {
 
 export type QuizGenerationRequest = {
   commitShas: string[]
-  difficulty?: 'easy' | 'medium' | 'hard'
   questionCount?: number
   selectedTopic?: string
 }
@@ -134,7 +132,6 @@ export type QuizGenerationResponse = {
     totalCommits: number
     requestedCount: number
     generatedCount: number
-    difficulty: string
     generatedAt: string
   }
 }
@@ -267,7 +264,7 @@ export const learningApi = {
 
   /**
    * 선택한 커밋들로 퀴즈 생성
-   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수, 선택된 주제)
+   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 개수, 선택된 주제)
    */
   generateQuiz: async (request: QuizGenerationRequest): Promise<QuizGenerationResponse> => {
     const response = await apiClient.post<QuizGenerationResponse>('/learning/quiz', request)
@@ -276,7 +273,7 @@ export const learningApi = {
 
   /**
    * 커밋 기반 학습 퀴즈 생성
-   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 난이도, 개수, 선택된 주제)
+   * @param request - 퀴즈 생성 요청 (커밋 SHA 목록, 개수, 선택된 주제)
    * @returns 퀴즈와 커밋 정보
    */
   generateLearningSession: async (

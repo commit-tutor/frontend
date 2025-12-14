@@ -155,7 +155,6 @@ function SessionPage() {
 
       const sessionData = await learningApi.generateLearningSession({
         commitShas: commitIdentifiers,
-        difficulty: 'medium',
         questionCount: 5,
         selectedTopic,
       })
