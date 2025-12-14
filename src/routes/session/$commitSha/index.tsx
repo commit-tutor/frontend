@@ -93,7 +93,13 @@ function SessionPage() {
         setCommitFiles(allFiles)
         setCommitInfo(firstCommitInfo)
         setFilesError(null)
-        console.log('✅ 커밋 파일 정보 로드 완료:', allFiles.length, '개 (', commitIdentifiers.length, '개 커밋)')
+        console.log(
+          '✅ 커밋 파일 정보 로드 완료:',
+          allFiles.length,
+          '개 (',
+          commitIdentifiers.length,
+          '개 커밋)',
+        )
       } catch (error) {
         console.error('❌ 커밋 파일 로드 실패:', error)
         setFilesError(error instanceof Error ? error.message : '파일 정보를 불러올 수 없습니다')
@@ -159,6 +165,9 @@ function SessionPage() {
       console.log('✅ 퀴즈 생성 완료:', sessionData.quiz.questions.length, '개')
 
       setHasGeneratedAI(true)
+
+      // 퀴즈 탭으로 자동 전환
+      setActiveTab('quiz')
     } catch (error) {
       console.error('❌ 퀴즈 생성 실패:', error)
       const errorMessage =
