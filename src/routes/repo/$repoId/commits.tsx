@@ -19,24 +19,12 @@ import {
   CheckSquare,
   Square,
   Info,
+  RefreshCw,
 } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
+import { useCommits } from '@/hooks/useCommits'
 
 type LearningValue = 'high' | 'medium' | 'low'
-
-interface Commit {
-  sha: string
-  message: string
-  author: string
-  date: string
-  filesChanged: number
-  additions: number
-  deletions: number
-  learningValue: LearningValue
-  isCompleted: boolean
-}
-
-const API_BASE_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/repo`
 
 const LEARNING_VALUE_COLORS: Record<LearningValue, string> = {
   high: 'bg-green-500',
@@ -54,14 +42,14 @@ function CommitsPage() {
   const navigate = useNavigate()
   const { repoId } = Route.useParams()
 
-  // 브랜치 목록 가져오기
+  // 브랜치 목록 가져오기 (TanStack Query 기반 - 캐싱)
   const { branches, isLoading: isBranchesLoading, error: branchesError } = useBranches(repoId)
 
   const [selectedBranch, setSelectedBranch] = useState<string>('')
-  const [commits, setCommits] = useState<Commit[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [selectedCommits, setSelectedCommits] = useState<Set<string>>(new Set())
+
+  // 커밋 목록 가져오기 (TanStack Query 기반 - 브랜치별 캐싱)
+  const { commits, isLoading, error, refresh } = useCommits(repoId, selectedBranch)
 
   // 브랜치 목록이 로드되면 첫 번째 브랜치를 선택
   useEffect(() => {
@@ -74,59 +62,15 @@ function CommitsPage() {
     }
   }, [branches, selectedBranch])
 
-  const fetchCommits = async (branch: string) => {
-    setIsLoading(true)
-    setError(null)
-    setCommits([])
-
-    // 백엔드URL: http://localhost:8000/api/v1/repo/{repoId}/commits?branch=main
-    const url = `${API_BASE_URL}/${repoId}/commits?branch=${branch}`
-    console.log('📡 커밋 요청 URL:', url)
-    console.log('🔑 브랜치:', branch)
-
-    try {
-      const token = localStorage.getItem('github_token')
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      })
-
-      console.log('📥 응답 상태:', response.status)
-
-      if (!response.ok) {
-        let errorDetail = response.statusText
-        try {
-          const errorData = await response.json()
-          console.log('❌ 에러 데이터:', errorData)
-          errorDetail = errorData.detail || errorDetail
-        } catch (e) {}
-        throw new Error(`커밋 로딩 실패 (${response.status}): ${errorDetail}`)
-      }
-
-      const data: Commit[] = await response.json()
-      console.log('✅ 커밋 데이터 받음:', data.length, '개')
-      console.log('📋 커밋 목록:', data)
-      setCommits(data)
-    } catch (err) {
-      console.error('❌ 커밋 로딩 에러:', err)
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (selectedBranch) {
-      fetchCommits(selectedBranch)
-    }
-  }, [repoId, selectedBranch])
-
   const handleBranchChange = (branch: string) => {
     console.log('🔄 브랜치 변경:', selectedBranch, '->', branch)
     setSelectedBranch(branch)
     setSelectedCommits(new Set()) // 브랜치 변경 시 선택 초기화
+  }
+
+  const handleRefresh = async () => {
+    console.log('🔄 커밋 목록 새로고침')
+    await refresh()
   }
 
   const toggleCommitSelection = (commitSha: string) => {
@@ -159,9 +103,25 @@ function CommitsPage() {
   return (
     <div className="flex flex-col space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">커밋 목록</h1>
-        <p className="text-sm text-gray-600">Repository ID: {repoId}</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">커밋 목록</h1>
+          <p className="text-sm text-gray-600">
+            Repository ID: {repoId}
+            {commits.length > 0 && ` • ${commits.length}개의 커밋`}
+          </p>
+        </div>
+        <Button
+          onClick={handleRefresh}
+          disabled={isLoading || !selectedBranch}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
+          title="GitHub에서 최신 커밋 목록을 가져옵니다"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          {isLoading ? '새로고침 중...' : '새로고침'}
+        </Button>
       </div>
 
       {/* Branch Selector */}
@@ -282,9 +242,10 @@ function CommitsPage() {
 
       {/* --- Commit List --- */}
       <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-        {isLoading && !error ? (
+        {isBranchesLoading || isLoading ? (
+          // 브랜치 로딩 중 또는 커밋 로딩 중
           <>
-            {[1, 2, 3].map((i) => (
+            {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="p-3 border-b border-gray-200 last:border-b-0">
                 <Skeleton className="h-4 w-3/4 bg-gray-200 mb-2" />
                 <Skeleton className="h-3 w-1/2 bg-gray-200" />
@@ -292,9 +253,10 @@ function CommitsPage() {
             ))}
           </>
         ) : commits.length === 0 && !error ? (
+          // 커밋이 없는 경우
           <div className="py-12 text-center">
             <GitCommit className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <p className="text-gray-900 font-medium mb-2">{selectedBranch}</p>
+            <p className="text-gray-900 font-medium mb-2">{selectedBranch} 브랜치</p>
             <p className="text-sm text-gray-600">커밋이 없습니다</p>
           </div>
         ) : (
