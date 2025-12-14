@@ -191,16 +191,6 @@ function QuizResultPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* 추가 정보 */}
-      <div className="text-center text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <p className="font-medium text-gray-900 mb-1">💾 저장 정보</p>
-        <p>
-          이 퀴즈 결과는 데이터베이스에 영구적으로 저장되었습니다.
-          <br />
-          나의 퀴즈 목록에서 언제든지 기록을 확인하고, 다시 풀어볼 수 있습니다.
-        </p>
-      </div>
     </div>
   )
 }
