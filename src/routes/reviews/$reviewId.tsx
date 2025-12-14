@@ -11,16 +11,27 @@ import { reviewApi, queryKeys, type ReviewSection } from '@/lib/api'
 // 간단한 마크다운 렌더러
 const SimpleMarkdown = ({ content }: { content: string }) => {
   const renderMarkdown = (text: string) => {
-    // 코드 블록
+    // HTML 이스케이프 (XSS 방지)
+    const escapeHtml = (str: string) => {
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+    }
+
+    // 코드 블록 (먼저 처리)
     text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
-      return `<pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-4"><code>${code.trim()}</code></pre>`
+      const escapedCode = escapeHtml(code.trim())
+      return `<pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-3 text-sm"><code>${escapedCode}</code></pre>`
     })
 
     // 인라인 코드
-    text = text.replace(
-      /`([^`]+)`/g,
-      '<code class="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">$1</code>',
-    )
+    text = text.replace(/`([^`]+)`/g, (_, code) => {
+      const escapedCode = escapeHtml(code)
+      return `<code class="bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded text-sm font-mono">${escapedCode}</code>`
+    })
 
     // 헤더
     text = text.replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>')
@@ -44,7 +55,7 @@ const SimpleMarkdown = ({ content }: { content: string }) => {
 
   return (
     <div
-      className="prose prose-gray max-w-none"
+      className="prose prose-gray max-w-none text-gray-700"
       dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
     />
   )
@@ -128,8 +139,8 @@ function ReviewDetailPage() {
       {/* 학습 섹션 */}
       <div className="space-y-6 mb-8">
         {review.sections.map((section: ReviewSection, index: number) => (
-          <Card key={index} className="border-gray-200">
-            <CardContent className="p-6">
+          <Card key={index} className="border-gray-200 overflow-hidden">
+            <CardContent className="px-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center text-sm font-bold">
                   {index + 1}
@@ -164,10 +175,10 @@ function ReviewDetailPage() {
               {section.examples && section.examples.length > 0 && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <h3 className="font-bold text-gray-900 mb-3">💡 예제</h3>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {section.examples.map((example, idx) => (
-                      <div key={idx} className="text-gray-700">
-                        {example}
+                      <div key={idx}>
+                        <SimpleMarkdown content={example} />
                       </div>
                     ))}
                   </div>
