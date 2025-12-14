@@ -85,7 +85,6 @@ export type Commit = {
   filesChanged: number
   additions: number
   deletions: number
-  learningValue: 'high' | 'medium' | 'low'
   isCompleted: boolean
 }
 

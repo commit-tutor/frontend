@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   DropdownMenu,
@@ -23,20 +22,6 @@ import {
 } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
 import { useCommits } from '@/hooks/useCommits'
-
-type LearningValue = 'high' | 'medium' | 'low'
-
-const LEARNING_VALUE_COLORS: Record<LearningValue, string> = {
-  high: 'bg-green-500',
-  medium: 'bg-yellow-500',
-  low: 'bg-neutral-500',
-}
-
-const LEARNING_VALUE_LABELS: Record<LearningValue, string> = {
-  high: 'high',
-  medium: 'medium',
-  low: 'low',
-}
 
 function CommitsPage() {
   const navigate = useNavigate()
@@ -289,11 +274,6 @@ function CommitsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-medium text-gray-900 truncate">{commit.message}</p>
-                    <Badge
-                      className={`${LEARNING_VALUE_COLORS[commit.learningValue]} text-white text-xs flex-shrink-0 px-1.5 py-0`}
-                    >
-                      {LEARNING_VALUE_LABELS[commit.learningValue]}
-                    </Badge>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-gray-600">
                     <span className="flex items-center gap-1">
