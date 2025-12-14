@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as StatisticsRouteImport } from './routes/statistics'
 import { Route as MyQuizzesRouteImport } from './routes/my-quizzes'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as Dashboard_mockRouteImport } from './routes/dashboard_mock'
@@ -28,11 +27,6 @@ import { Route as RepoRepoIdCommits_mockRouteImport } from './routes/repo/$repoI
 import { Route as RepoRepoIdCommitsRouteImport } from './routes/repo/$repoId/commits'
 import { Route as QuizQuizIdResultRouteImport } from './routes/quiz/$quizId/result'
 
-const StatisticsRoute = StatisticsRouteImport.update({
-  id: '/statistics',
-  path: '/statistics',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MyQuizzesRoute = MyQuizzesRouteImport.update({
   id: '/my-quizzes',
   path: '/my-quizzes',
@@ -126,7 +120,6 @@ export interface FileRoutesByFullPath {
   '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
   '/my-quizzes': typeof MyQuizzesRoute
-  '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/reviews/$reviewId': typeof ReviewsReviewIdRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -146,7 +139,6 @@ export interface FileRoutesByTo {
   '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
   '/my-quizzes': typeof MyQuizzesRoute
-  '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/reviews/$reviewId': typeof ReviewsReviewIdRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -167,7 +159,6 @@ export interface FileRoutesById {
   '/dashboard_mock': typeof Dashboard_mockRoute
   '/home': typeof HomeRoute
   '/my-quizzes': typeof MyQuizzesRoute
-  '/statistics': typeof StatisticsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/reviews/$reviewId': typeof ReviewsReviewIdRoute
   '/settings/profile': typeof SettingsProfileRoute
@@ -189,7 +180,6 @@ export interface FileRouteTypes {
     | '/dashboard_mock'
     | '/home'
     | '/my-quizzes'
-    | '/statistics'
     | '/auth/callback'
     | '/reviews/$reviewId'
     | '/settings/profile'
@@ -209,7 +199,6 @@ export interface FileRouteTypes {
     | '/dashboard_mock'
     | '/home'
     | '/my-quizzes'
-    | '/statistics'
     | '/auth/callback'
     | '/reviews/$reviewId'
     | '/settings/profile'
@@ -229,7 +218,6 @@ export interface FileRouteTypes {
     | '/dashboard_mock'
     | '/home'
     | '/my-quizzes'
-    | '/statistics'
     | '/auth/callback'
     | '/reviews/$reviewId'
     | '/settings/profile'
@@ -250,7 +238,6 @@ export interface RootRouteChildren {
   Dashboard_mockRoute: typeof Dashboard_mockRoute
   HomeRoute: typeof HomeRoute
   MyQuizzesRoute: typeof MyQuizzesRoute
-  StatisticsRoute: typeof StatisticsRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   ReviewsReviewIdRoute: typeof ReviewsReviewIdRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
@@ -266,13 +253,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/statistics': {
-      id: '/statistics'
-      path: '/statistics'
-      fullPath: '/statistics'
-      preLoaderRoute: typeof StatisticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/my-quizzes': {
       id: '/my-quizzes'
       path: '/my-quizzes'
@@ -402,7 +382,6 @@ const rootRouteChildren: RootRouteChildren = {
   Dashboard_mockRoute: Dashboard_mockRoute,
   HomeRoute: HomeRoute,
   MyQuizzesRoute: MyQuizzesRoute,
-  StatisticsRoute: StatisticsRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   ReviewsReviewIdRoute: ReviewsReviewIdRoute,
   SettingsProfileRoute: SettingsProfileRoute,

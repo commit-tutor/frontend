@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useAuth } from '@/contexts/AuthContext'
 import { Separator } from '@/components/ui/separator'
-import { Home, FolderGit2, BookOpen, BookCheck, Settings, TrendingUp, Code2 } from 'lucide-react'
+import { Home, FolderGit2, BookOpen, BookCheck, Settings, Code2 } from 'lucide-react'
 
 const NAV_ITEMS = [
   {
@@ -27,12 +27,6 @@ const NAV_ITEMS = [
     icon: BookCheck,
     path: '/reviews',
     description: 'AI 복습 자료',
-  },
-  {
-    title: '통계',
-    icon: TrendingUp,
-    path: '/statistics',
-    description: '학습 통계',
   },
 ]
 
