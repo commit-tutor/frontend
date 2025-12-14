@@ -19,9 +19,12 @@ import {
   Square,
   Info,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { useBranches } from '@/hooks/useBranches'
 import { useCommits } from '@/hooks/useCommits'
+import type { Commit } from '@/lib/api'
 
 function CommitsPage() {
   const navigate = useNavigate()
@@ -31,10 +34,13 @@ function CommitsPage() {
   const { branches, isLoading: isBranchesLoading, error: branchesError } = useBranches(repoId)
 
   const [selectedBranch, setSelectedBranch] = useState<string>('')
-  const [selectedCommits, setSelectedCommits] = useState<Set<string>>(new Set())
+  // 선택된 커밋을 Map으로 저장 (SHA -> Commit 정보)하여 페이지와 무관하게 정보 유지
+  const [selectedCommitsMap, setSelectedCommitsMap] = useState<Map<string, Commit>>(new Map())
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const perPage = 20
 
   // 커밋 목록 가져오기 (TanStack Query 기반 - 브랜치별 캐싱)
-  const { commits, isLoading, error, refresh } = useCommits(repoId, selectedBranch)
+  const { commits, pagination, isLoading, error, refresh } = useCommits(repoId, selectedBranch, currentPage, perPage)
 
   // 브랜치 목록이 로드되면 첫 번째 브랜치를 선택
   useEffect(() => {
@@ -50,7 +56,24 @@ function CommitsPage() {
   const handleBranchChange = (branch: string) => {
     console.log('🔄 브랜치 변경:', selectedBranch, '->', branch)
     setSelectedBranch(branch)
-    setSelectedCommits(new Set()) // 브랜치 변경 시 선택 초기화
+    setSelectedCommitsMap(new Map()) // 브랜치 변경 시 선택 초기화
+    setCurrentPage(1) // 브랜치 변경 시 첫 페이지로 리셋
+  }
+
+  const handlePrevPage = () => {
+    if (pagination?.has_prev_page) {
+      setCurrentPage((prev) => prev - 1)
+      // 페이지 상단으로 스크롤
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handleNextPage = () => {
+    if (pagination?.has_next_page) {
+      setCurrentPage((prev) => prev + 1)
+      // 페이지 상단으로 스크롤
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }
 
   const handleRefresh = async () => {
@@ -58,24 +81,24 @@ function CommitsPage() {
     await refresh()
   }
 
-  const toggleCommitSelection = (commitSha: string) => {
-    setSelectedCommits((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(commitSha)) {
-        newSet.delete(commitSha)
+  const toggleCommitSelection = (commit: Commit) => {
+    setSelectedCommitsMap((prev) => {
+      const newMap = new Map(prev)
+      if (newMap.has(commit.sha)) {
+        newMap.delete(commit.sha)
       } else {
-        newSet.add(commitSha)
+        newMap.set(commit.sha, commit)
       }
-      return newSet
+      return newMap
     })
   }
 
   const handleStartBatchLearning = () => {
-    if (selectedCommits.size === 0) return
+    if (selectedCommitsMap.size === 0) return
 
     // 여러 커밋을 한 번에 학습하는 세션으로 이동
     // 모든 선택된 커밋을 repoId:sha 형태로 변환
-    const commitShas = Array.from(selectedCommits)
+    const commitShas = Array.from(selectedCommitsMap.keys())
     const commitIdentifiers = commitShas.map((sha) => `${repoId}:${sha}`)
 
     // 여러 커밋을 쉼표로 구분하여 URL에 전달
@@ -84,6 +107,9 @@ function CommitsPage() {
     // 세션 페이지로 이동
     navigate({ to: `/session/${encodeURIComponent(commitsParam)}` })
   }
+
+  // 선택된 커밋 목록 (페이지와 무관하게 전체)
+  const selectedCommitsList = Array.from(selectedCommitsMap.values())
 
   return (
     <div className="flex flex-col space-y-6">
@@ -142,32 +168,36 @@ function CommitsPage() {
       </DropdownMenu>
 
       {/* --- Selection Guide --- */}
-      {!isLoading && commits.length > 0 && (
+      {!isLoading && (commits.length > 0 || selectedCommitsList.length > 0) && (
         <Card className="border-gray-200 bg-gray-50">
           <CardContent className="py-1 px-4">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 flex-1">
                 <Info className="h-5 w-5 flex-shrink-0 text-gray-600" />
                 <div className="text-sm flex-1">
-                  {selectedCommits.size === 0 ? (
+                  {selectedCommitsList.length === 0 ? (
                     <p className="text-gray-900 font-medium">학습을 시작할 커밋을 선택해주세요</p>
                   ) : (
                     <div>
                       <p className="text-gray-900 font-medium mb-2">
-                        <span className="font-bold">{selectedCommits.size}개</span>의 커밋 선택됨
+                        <span className="font-bold">{selectedCommitsList.length}개</span>의 커밋 선택됨
                       </p>
-                      <div className="space-y-1">
-                        {commits
-                          .filter((commit) => selectedCommits.has(commit.sha))
-                          .slice(0, 10)
-                          .map((commit) => (
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {selectedCommitsList.slice(0, 10).map((commit) => {
+                          const maxLength = 60
+                          const truncatedMessage =
+                            commit.message.length > maxLength
+                              ? commit.message.substring(0, maxLength) + '...'
+                              : commit.message
+                          return (
                             <p key={commit.sha} className="text-xs text-gray-600 truncate">
-                              • {commit.message}
+                              • {truncatedMessage}
                             </p>
-                          ))}
-                        {selectedCommits.size > 10 && (
+                          )
+                        })}
+                        {selectedCommitsList.length > 10 && (
                           <p className="text-xs text-gray-500 italic">
-                            외 {selectedCommits.size - 10}개
+                            외 {selectedCommitsList.length - 10}개
                           </p>
                         )}
                       </div>
@@ -176,12 +206,12 @@ function CommitsPage() {
                 </div>
               </div>
 
-              {selectedCommits.size > 0 && (
+              {selectedCommitsList.length > 0 && (
                 <div className="flex gap-2 items-end self-end">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedCommits(new Set())}
+                    onClick={() => setSelectedCommitsMap(new Map())}
                     className="border-gray-300 text-gray-700"
                   >
                     선택 해제
@@ -226,7 +256,7 @@ function CommitsPage() {
       )}
 
       {/* --- Commit List --- */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+      <div className={`border border-gray-200 ${pagination && !isLoading && commits.length > 0 ? 'rounded-t-lg' : 'rounded-lg'} overflow-hidden bg-white`}>
         {isBranchesLoading || isLoading ? (
           // 브랜치 로딩 중 또는 커밋 로딩 중
           <>
@@ -246,7 +276,7 @@ function CommitsPage() {
           </div>
         ) : (
           commits.map((commit, index) => {
-            const isSelected = selectedCommits.has(commit.sha)
+            const isSelected = selectedCommitsMap.has(commit.sha)
             return (
               <div
                 key={commit.sha}
@@ -260,7 +290,7 @@ function CommitsPage() {
               >
                 {/* Checkbox for selecting commit */}
                 <button
-                  onClick={() => toggleCommitSelection(commit.sha)}
+                  onClick={() => toggleCommitSelection(commit)}
                   className="flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 rounded"
                 >
                   {isSelected ? (
@@ -293,6 +323,38 @@ function CommitsPage() {
           })
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {!isLoading && commits.length > 0 && pagination && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+          <div className="text-sm text-gray-600">
+            {pagination.current_page}페이지
+            {pagination.total_pages > 1 && ` / 총 ${pagination.total_pages}페이지`}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevPage}
+              disabled={!pagination.has_prev_page}
+              className="flex items-center gap-1 border-gray-300"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              이전
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={!pagination.has_next_page}
+              className="flex items-center gap-1 border-gray-300"
+            >
+              다음
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

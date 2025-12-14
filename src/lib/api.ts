@@ -88,6 +88,20 @@ export type Commit = {
   isCompleted: boolean
 }
 
+export type PaginationInfo = {
+  current_page: number
+  per_page: number
+  has_next_page: boolean
+  has_prev_page: boolean
+  next_page: number | null
+  total_pages: number
+}
+
+export type CommitsResponse = {
+  commits: Commit[]
+  pagination: PaginationInfo
+}
+
 // Learning API Types
 export type QuizQuestion = {
   id: string
@@ -216,10 +230,17 @@ export const repoApi = {
    * 특정 저장소의 커밋 목록 조회
    * @param repoIdentifier - 저장소 ID 또는 'owner/repo' 형식
    * @param branch - 브랜치 이름 (기본값: main)
+   * @param page - 페이지 번호 (기본값: 1)
+   * @param perPage - 페이지당 커밋 수 (기본값: 20)
    */
-  getCommits: async (repoIdentifier: string | number, branch = 'main'): Promise<Commit[]> => {
-    const response = await apiClient.get<Commit[]>(`/repo/${repoIdentifier}/commits`, {
-      params: { branch },
+  getCommits: async (
+    repoIdentifier: string | number, 
+    branch = 'main',
+    page = 1,
+    perPage = 20
+  ): Promise<CommitsResponse> => {
+    const response = await apiClient.get<CommitsResponse>(`/repo/${repoIdentifier}/commits`, {
+      params: { branch, page, per_page: perPage },
     })
     return response.data
   },
@@ -452,7 +473,8 @@ export type ReviewListResponse = {
 // Query Keys - TanStack Query 캐시 키 상수
 export const queryKeys = {
   repositories: ['repositories'] as const,
-  commits: (repoId: string | number, branch: string) => ['commits', repoId, branch] as const,
+  commits: (repoId: string | number, branch: string, page: number = 1, perPage: number = 20) => 
+    ['commits', repoId, branch, page, perPage] as const,
   branches: (repoId: string | number) => ['branches', repoId] as const,
   commitDetails: (repoId: string | number, sha: string) => ['commitDetails', repoId, sha] as const,
   myQuizzes: (isCompleted?: boolean) => ['myQuizzes', isCompleted] as const,
