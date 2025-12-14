@@ -1,7 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Lightbulb, FileCode, FilePlus, FileX, FileEdit } from 'lucide-react'
+import { FileCode, FilePlus, FileX, FileEdit } from 'lucide-react'
 import type { CommitDiffInfo } from '@/lib/api'
 
 interface AIAnalysis {

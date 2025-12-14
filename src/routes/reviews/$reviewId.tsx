@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import * as React from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,7 +21,7 @@ const SimpleMarkdown = ({ content }: { content: string }) => {
     }
 
     // 코드 블록 (먼저 처리)
-    text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
+    text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, _lang, code) => {
       const escapedCode = escapeHtml(code.trim())
       return `<pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-3 text-sm"><code>${escapedCode}</code></pre>`
     })

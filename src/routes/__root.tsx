@@ -1,7 +1,7 @@
 import { createRootRoute, Outlet, useLocation, Link } from '@tanstack/react-router'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { useAuth } from '@/contexts/AuthContext'
-import { Home, ArrowLeft } from 'lucide-react'
+import { Home } from 'lucide-react'
 
 const NO_SIDEBAR_ROUTES = ['/', '/auth/callback', '/onboarding']
 

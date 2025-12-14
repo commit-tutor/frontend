@@ -110,7 +110,7 @@ export function RecentActivityTab() {
               <Button
                 variant="outline"
                 className="w-full mt-2"
-                onClick={() => navigate({ to: '/quiz' })}
+                onClick={() => navigate({ to: '/my-quizzes' })}
               >
                 전체 퀴즈 보기
                 <ArrowRight className="h-4 w-4 ml-2" />

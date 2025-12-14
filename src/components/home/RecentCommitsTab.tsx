@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { repoApi, queryKeys, type Repository, type Commit } from '@/lib/api'
+import { repoApi, queryKeys, type Repository } from '@/lib/api'
 import { GitBranch, Code2, BookOpen, AlertCircle, RefreshCw } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'

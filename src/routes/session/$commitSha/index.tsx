@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Code2, Loader2, Sparkles, Brain, AlertCircle } from 'lucide-react'
+import { Loader2, Sparkles, Brain, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CodeReviewTab } from '@/components/session/CodeReviewTab'
 import { TopicSelector } from '@/components/session/TopicSelector'
@@ -15,7 +14,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 function SessionPage() {
   const navigate = useNavigate()
   const { commitSha } = Route.useParams()
-  const [activeTab, setActiveTab] = useState('review')
 
   // Router state에서 커밋 정보 가져오기
   const routerState = (window.history.state as any)?.usr?.commitInfo

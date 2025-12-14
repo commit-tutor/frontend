@@ -8,8 +8,6 @@ interface QuizProgressProps {
 }
 
 export function QuizProgress({
-  answeredCount,
-  totalQuestions,
   currentQuestionIndex,
   allQuestions,
   quizAnswers,

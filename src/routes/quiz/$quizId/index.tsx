@@ -1,9 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Brain, Loader2, AlertCircle, BookmarkCheck } from 'lucide-react'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
+import { Loader2, AlertCircle, BookmarkCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { useQuiz } from '@/hooks/useQuiz'
 import { QuizTab } from '@/components/session/QuizTab'
 import { myQuizApi, type MyQuizResponse, type QuizQuestion } from '@/lib/api'
@@ -76,7 +75,7 @@ function QuizPlayPage() {
       navigate({
         to: '/quiz/$quizId/result',
         params: { quizId },
-        state: { result, quiz, savedSuccessfully: true },
+        state: { result, quiz, savedSuccessfully: true } as any,
       })
     } catch (err: any) {
       console.error('❌ 퀴즈 제출 실패:', err)
