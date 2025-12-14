@@ -19,6 +19,9 @@ export function RepositoryList({
   searchQuery,
   onStartLearning,
 }: RepositoryListProps) {
+  // 배열이 아닌 경우 빈 배열로 변환 (안전성 보장)
+  const safeRepositories = Array.isArray(repositories) ? repositories : []
+
   // 로딩 상태
   if (isLoading && !error) {
     return (
@@ -52,7 +55,7 @@ export function RepositoryList({
   }
 
   // 빈 상태
-  if (repositories.length === 0) {
+  if (safeRepositories.length === 0) {
     return (
       <Card className="bg-white border-gray-200">
         <CardContent className="py-12 text-center">
@@ -73,7 +76,7 @@ export function RepositoryList({
   // 저장소 목록
   return (
     <div className="space-y-3">
-      {repositories.map((repo) => (
+      {safeRepositories.map((repo) => (
         <RepositoryCard key={repo.id} repository={repo} onStartLearning={onStartLearning} />
       ))}
     </div>

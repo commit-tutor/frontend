@@ -127,7 +127,7 @@ function CommitsPage() {
           disabled={isLoading || !selectedBranch}
           variant="outline"
           size="sm"
-          className="flex items-center gap-2 border-gray-300 hover:bg-gray-50"
+          className="flex items-center gap-2 border-gray-300 hover:bg-gray-100 hover:border-gray-400 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
           title="GitHub에서 최신 커밋 목록을 가져옵니다"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -140,7 +140,7 @@ function CommitsPage() {
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="w-full justify-between border-gray-200"
+            className="w-full justify-between border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             disabled={isLoading || isBranchesLoading}
           >
             <span className="flex items-center gap-2">
@@ -212,14 +212,14 @@ function CommitsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedCommitsMap(new Map())}
-                    className="border-gray-300 text-gray-700"
+                    className="border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition-colors cursor-pointer"
                   >
                     선택 해제
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleStartBatchLearning}
-                    className="bg-gray-900 text-white hover:bg-gray-800"
+                    className="bg-gray-900 text-white hover:bg-gray-800 transition-colors cursor-pointer"
                   >
                     학습 시작하기
                   </Button>
@@ -280,23 +280,25 @@ function CommitsPage() {
             return (
               <div
                 key={commit.sha}
-                className={`flex items-center gap-3 px-3 py-2 border-b border-gray-200 last:border-b-0 transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2 border-b border-gray-200 last:border-b-0 transition-colors cursor-pointer ${
                   isSelected
-                    ? 'bg-gray-100 border-l-4 border-l-gray-900'
+                    ? 'bg-gray-100 border-l-4 border-l-gray-900 hover:bg-gray-200'
                     : index % 2 === 0
                       ? 'bg-white hover:bg-gray-50'
                       : 'bg-gray-50 hover:bg-gray-100'
                 }`}
+                onClick={() => toggleCommitSelection(commit)}
               >
                 {/* Checkbox for selecting commit */}
                 <button
                   onClick={() => toggleCommitSelection(commit)}
-                  className="flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 rounded"
+                  className="flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 rounded cursor-pointer hover:opacity-70 transition-opacity"
+                  aria-label={isSelected ? '커밋 선택 해제' : '커밋 선택'}
                 >
                   {isSelected ? (
                     <CheckSquare className="h-4 w-4 text-gray-900" />
                   ) : (
-                    <Square className="h-4 w-4 text-gray-400" />
+                    <Square className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
                   )}
                 </button>
 
@@ -337,7 +339,7 @@ function CommitsPage() {
               size="sm"
               onClick={handlePrevPage}
               disabled={!pagination.has_prev_page}
-              className="flex items-center gap-1 border-gray-300"
+              className="flex items-center gap-1 border-gray-300 hover:bg-gray-100 hover:border-gray-400 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ChevronLeft className="h-4 w-4" />
               이전
@@ -347,7 +349,7 @@ function CommitsPage() {
               size="sm"
               onClick={handleNextPage}
               disabled={!pagination.has_next_page}
-              className="flex items-center gap-1 border-gray-300"
+              className="flex items-center gap-1 border-gray-300 hover:bg-gray-100 hover:border-gray-400 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               다음
               <ChevronRight className="h-4 w-4" />

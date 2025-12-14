@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { GitBranch, ExternalLink } from 'lucide-react'
 import type { Repository } from '@/lib/api'
 
@@ -10,8 +9,19 @@ interface RepositoryCardProps {
 }
 
 export function RepositoryCard({ repository, onStartLearning }: RepositoryCardProps) {
+  const handleCardClick = (e: React.MouseEvent) => {
+    // ExternalLink 클릭 시에는 네비게이션 하지 않음
+    if ((e.target as HTMLElement).closest('a')) {
+      return
+    }
+    onStartLearning(repository.id)
+  }
+
   return (
-    <Card className="bg-white border-gray-200 hover:border-gray-300 transition-colors">
+    <Card
+      className="bg-white border-gray-200 hover:border-gray-300 transition-colors cursor-pointer hover:shadow-md"
+      onClick={handleCardClick}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -22,6 +32,7 @@ export function RepositoryCard({ repository, onStartLearning }: RepositoryCardPr
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-blue-600"
+                onClick={(e) => e.stopPropagation()}
               >
                 {repository.name}
               </a>
@@ -34,6 +45,7 @@ export function RepositoryCard({ repository, onStartLearning }: RepositoryCardPr
             href={`https://github.com/${repository.full_name}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink className="h-4 w-4 text-gray-500 hover:text-blue-600" />
           </a>
@@ -49,13 +61,6 @@ export function RepositoryCard({ repository, onStartLearning }: RepositoryCardPr
             {repository.private ? '🔒 Private' : '📖 Public'}
           </span>
         </div>
-
-        <Button
-          onClick={() => onStartLearning(repository.id)}
-          className="w-full bg-gray-900 text-white hover:bg-gray-800"
-        >
-          학습하기
-        </Button>
       </CardContent>
     </Card>
   )

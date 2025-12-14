@@ -14,7 +14,7 @@ interface UseRepositoriesReturn {
  */
 export function useRepositories(): UseRepositoriesReturn {
   const {
-    data: repositories = [],
+    data: repositoriesData,
     isLoading,
     error,
     refetch,
@@ -26,6 +26,9 @@ export function useRepositories(): UseRepositoriesReturn {
     refetchOnWindowFocus: false, // 윈도우 포커스 시 자동 새로고침 비활성화
     refetchOnMount: false, // 컴포넌트 마운트 시 자동 새로고침 비활성화 (캐시 우선)
   })
+
+  // 배열이 아닌 경우 빈 배열로 변환 (안전성 보장)
+  const repositories = Array.isArray(repositoriesData) ? repositoriesData : []
 
   const refresh = async () => {
     await refetch()

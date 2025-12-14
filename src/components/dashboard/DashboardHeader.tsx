@@ -23,11 +23,9 @@ export function DashboardHeader({
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">저장소</h1>
-          <p className="text-sm text-gray-600">
-            {repositoryCount > 0
-              ? `${repositoryCount}개의 저장소가 있습니다`
-              : '학습할 GitHub 저장소를 선택하세요'}
-          </p>
+          {repositoryCount > 0 && (
+            <p className="text-sm text-gray-600">{repositoryCount}개의 저장소가 있습니다</p>
+          )}
         </div>
         <Button
           onClick={onRefresh}

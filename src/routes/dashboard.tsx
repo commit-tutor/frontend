@@ -33,7 +33,7 @@ function DashboardPage() {
         onSearchChange={setSearchQuery}
         isLoading={isLoading}
         onRefresh={handleRefresh}
-        repositoryCount={repositories.length}
+        repositoryCount={Array.isArray(repositories) ? repositories.length : 0}
       />
 
       <RepositoryList

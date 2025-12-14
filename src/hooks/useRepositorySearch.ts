@@ -14,6 +14,11 @@ export function useRepositorySearch(repositories: Repository[]): UseRepositorySe
   const [searchQuery, setSearchQuery] = useState('')
 
   const filteredRepositories = useMemo(() => {
+    // 배열이 아닌 경우 빈 배열 반환 (안전성 보장)
+    if (!Array.isArray(repositories)) {
+      return []
+    }
+
     if (!searchQuery.trim()) {
       return repositories
     }
